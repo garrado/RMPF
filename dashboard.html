@@ -164,7 +164,7 @@
     if (grupo === 'Administrador') {
       links.push({ href: 'admin.html', icon: '⚙️', label: 'Admin' });
     }
-    links.push({ href: 'changelog.html', icon: '📋', label: 'Changelog' });
+    links.push({ href: 'changelog.html', icon: '📜', label: 'Changelog' });
     const current = location.pathname.split('/').pop();
     return links.map(l => {
       const active = current === l.href.split('/').pop() ? ' active' : '';

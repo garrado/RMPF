@@ -28,7 +28,7 @@
   <nav class="app-sidebar nao-imprimir" id="sidebar"></nav>
 
   <main class="app-main">
-    <div class="page-title">📋 Changelog</div>
+    <div class="page-title">📜 Changelog</div>
 
     <div class="card" style="max-width:760px">
       <div class="card-title">Histórico de Versões</div>
@@ -97,7 +97,7 @@
     if (grupo === 'Administrador') {
       links.push(['admin.html','⚙️','Admin']);
     }
-    links.push(['changelog.html','📋','Changelog']);
+    links.push(['changelog.html','📜','Changelog']);
     const cur = location.pathname.split('/').pop();
     return links.map(([href,icon,label]) =>
       `<a href="${href}" class="sidebar-link${cur===href?' active':''}"><span class="icon">${icon}</span>${label}</a>`
