@@ -27,6 +27,7 @@
     <a href="meus-lancamentos.html"class="sidebar-link"><span class="icon">📋</span>Meus Lançamentos</a>
     <a href="conferencia.html"     class="sidebar-link"><span class="icon">🔍</span>Conferência</a>
     <a href="ocorrencias.html"     class="sidebar-link"><span class="icon">📌</span>Ocorrências</a>
+    <a href="changelog.html"       class="sidebar-link"><span class="icon">📋</span>Changelog</a>
   </nav>
 
   <main class="app-main">
@@ -104,6 +105,9 @@
       </form>
     </div>
   </main>
+  <footer class="app-footer nao-imprimir">
+    RMPF v<span id="footer-version"></span> — <a href="changelog.html">Changelog</a>
+  </footer>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -270,6 +274,7 @@
     document.getElementById('loading-overlay').style.display = 'none';
     document.getElementById('app').style.display = '';
     document.getElementById('header-nome').textContent = nomeCurto(user.nome || user.email);
+    document.getElementById('footer-version').textContent = window.APP_VERSION || '';
 
     buildMesSelect();
     buildAnoSelect();

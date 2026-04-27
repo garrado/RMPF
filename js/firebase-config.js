@@ -22,4 +22,4 @@ window.db           = firebase.firestore();
 window.auth         = firebase.auth();
 window.googleProvider = new firebase.auth.GoogleAuthProvider();
 
-window.APP_VERSION = '1.0.0';
+window.APP_VERSION = '1.1.0';

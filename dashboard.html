@@ -133,6 +133,9 @@
       </div>
     </div>
   </main>
+  <footer class="app-footer nao-imprimir">
+    RMPF v<span id="footer-version"></span> — <a href="changelog.html">Changelog</a>
+  </footer>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -161,6 +164,7 @@
     if (grupo === 'Administrador') {
       links.push({ href: 'admin.html', icon: '⚙️', label: 'Admin' });
     }
+    links.push({ href: 'changelog.html', icon: '📋', label: 'Changelog' });
     const current = location.pathname.split('/').pop();
     return links.map(l => {
       const active = current === l.href.split('/').pop() ? ' active' : '';
@@ -281,6 +285,7 @@
     document.getElementById('header-nome').textContent = nomeCurto(user.nome || user.email);
     document.getElementById('sidebar-links').innerHTML = buildSidebar(user.grupo);
     document.getElementById('dash-sub').textContent = '— ' + (user.nome || user.email);
+    document.getElementById('footer-version').textContent = window.APP_VERSION || '';
 
     document.getElementById('btn-logout').addEventListener('click', () => {
       firebase.auth().signOut().then(() => { window.location.href = 'index.html'; });
