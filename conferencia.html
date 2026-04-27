@@ -198,7 +198,7 @@
       document.getElementById('metrics-wrap').style.display = '';
       renderTabela();
     } catch(e) {
-      tbody.innerHTML = `<tr class="empty-row"><td colspan="8">${alerta('danger','Erro: '+e.message)}</td></tr>`;
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="8">${alerta('danger','Erro: '+escHtml(e.message))}</td></tr>`;
     }
   }
 
@@ -265,7 +265,7 @@
       document.getElementById('alert-area').innerHTML = alerta('ok', `Lançamento <strong>${status}</strong>.`);
       loadConferencia();
     } catch(e) {
-      document.getElementById('hom-alert').innerHTML = alerta('danger','Erro: '+e.message);
+      document.getElementById('hom-alert').innerHTML = alerta('danger','Erro: '+escHtml(e.message));
     }
   }
 

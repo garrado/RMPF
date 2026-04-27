@@ -83,6 +83,16 @@ function mesAnoLabel(mes, ano) {
   return `${MESES[mes - 1]} / ${ano}`;
 }
 
+/** Escape a string for safe HTML insertion */
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // Expose globals
 window.TABELA_PONTUACAO = TABELA_PONTUACAO;
 window.TIPOS_ATIVIDADE  = TIPOS_ATIVIDADE;
@@ -92,3 +102,4 @@ window.nomeCurto        = nomeCurto;
 window.badge            = badge;
 window.alerta           = alerta;
 window.mesAnoLabel      = mesAnoLabel;
+window.escHtml          = escHtml;

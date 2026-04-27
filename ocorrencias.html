@@ -220,7 +220,7 @@
       document.getElementById('form-alert').innerHTML = '';
       loadOcorrencias();
     } catch(e) {
-      document.getElementById('form-alert').innerHTML = alerta('danger','Erro: '+e.message);
+      document.getElementById('form-alert').innerHTML = alerta('danger','Erro: '+escHtml(e.message));
     }
   }
 
@@ -240,7 +240,7 @@
       }
       renderOcorrs();
     } catch(e) {
-      tbody.innerHTML = `<tr class="empty-row"><td colspan="6">${alerta('danger','Erro: '+e.message)}</td></tr>`;
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="6">${alerta('danger','Erro: '+escHtml(e.message))}</td></tr>`;
     }
   }
 
@@ -292,7 +292,7 @@
       document.getElementById('alert-area').innerHTML = alerta('ok',`Ocorrência <strong>${status}</strong>.`);
       loadOcorrencias();
     } catch(e) {
-      document.getElementById('rev-alert').innerHTML = alerta('danger','Erro: '+e.message);
+      document.getElementById('rev-alert').innerHTML = alerta('danger','Erro: '+escHtml(e.message));
     }
   }
 

@@ -154,7 +154,7 @@
       _manuais = await db_getManuais(_user.email, mes, ano);
       renderTabela();
     } catch(e) {
-      tbody.innerHTML = `<tr class="empty-row"><td colspan="8">${alerta('danger','Erro: ' + e.message)}</td></tr>`;
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="8">${alerta('danger','Erro: '+escHtml(e.message))}</td></tr>`;
     }
   }
 
@@ -199,7 +199,7 @@
       await db_updateManual(id, { status: 'enviado' });
       showAlert('ok', 'Lançamento enviado para supervisão.');
       loadManuais();
-    } catch(e) { showAlert('danger', 'Erro: ' + e.message); }
+    } catch(e) { showAlert('danger', 'Erro: ' + escHtml(e.message)); }
   }
 
   async function excluirManual(id) {
@@ -209,7 +209,7 @@
       await db_deleteManual(id);
       showAlert('ok', 'Lançamento excluído.');
       loadManuais();
-    } catch(e) { showAlert('danger', 'Erro: ' + e.message); }
+    } catch(e) { showAlert('danger', 'Erro: ' + escHtml(e.message)); }
   }
 
   function editarManual(id) {
@@ -240,7 +240,7 @@
       showAlert('ok', 'Lançamento atualizado com sucesso.');
       loadManuais();
     } catch(e) {
-      document.getElementById('edit-alert').innerHTML = alerta('danger','Erro: ' + e.message);
+      document.getElementById('edit-alert').innerHTML = alerta('danger','Erro: '+escHtml(e.message));
     }
   });
 
