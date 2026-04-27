@@ -46,7 +46,7 @@ input, select, textarea { font-family: var(--font); }
 .app-layout {
   display: grid;
   grid-template-columns: var(--sidebar-w) 1fr;
-  grid-template-rows: var(--header-h) 1fr;
+  grid-template-rows: var(--header-h) 1fr auto;
   min-height: 100vh;
 }
 
@@ -536,6 +536,77 @@ table.rmpf-table {
   border-radius: 4px;
   color: var(--cinzaT);
 }
+
+/* ── Footer ── */
+.app-footer {
+  grid-column: 1 / -1;
+  background: var(--verde);
+  color: rgba(255,255,255,.75);
+  text-align: center;
+  font-size: .78rem;
+  padding: 8px 16px;
+  letter-spacing: .02em;
+}
+.app-footer a {
+  color: rgba(255,255,255,.9);
+  text-decoration: underline;
+}
+.app-footer a:hover { color: #fff; }
+
+/* ── Changelog timeline ── */
+.changelog-list { list-style: none; position: relative; padding-left: 28px; }
+.changelog-list::before {
+  content: '';
+  position: absolute;
+  left: 9px;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  background: var(--cinzaL);
+}
+.changelog-item { position: relative; margin-bottom: 28px; }
+.changelog-item::before {
+  content: '';
+  position: absolute;
+  left: -23px;
+  top: 6px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--verde);
+  border: 2px solid var(--branco);
+  box-shadow: 0 0 0 2px var(--verde);
+}
+.changelog-version {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.changelog-version .badge-version {
+  background: var(--verde);
+  color: #fff;
+  font-weight: 700;
+  font-size: .8rem;
+  padding: 2px 10px;
+  border-radius: 20px;
+}
+.changelog-version .badge-date {
+  font-size: .78rem;
+  color: var(--cinzaT);
+}
+.changelog-title {
+  font-weight: 600;
+  font-size: .95rem;
+  margin-bottom: 6px;
+}
+.changelog-changes {
+  list-style: disc;
+  padding-left: 20px;
+  color: var(--cinzaT);
+  font-size: .875rem;
+}
+.changelog-changes li { margin-bottom: 3px; }
 
 /* ── Print ── */
 @media print {

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Changelog — RMPF</title>
+  <link rel="stylesheet" href="css/rmpf.css">
+</head>
+<body>
+<div id="loading-overlay" class="loading-overlay">
+  <div class="spinner spinner-lg"></div>
+  <div class="loading-text">Carregando…</div>
+</div>
+
+<div class="app-layout" id="app" style="display:none">
+  <header class="app-header nao-imprimir">
+    <button class="hamburger" id="hamburger" aria-label="Menu" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <div>
+      <div class="logo-text">🏛️ RMPF</div>
+      <div class="logo-sub">Produtividade Fiscal</div>
+    </div>
+    <div class="header-right">
+      <span class="user-name" id="header-nome">—</span>
+      <button class="btn-logout" id="btn-logout">Sair</button>
+    </div>
+  </header>
+
+  <nav class="app-sidebar nao-imprimir" id="sidebar"></nav>
+
+  <main class="app-main">
+    <div class="page-title">📜 Changelog</div>
+
+    <div class="card" style="max-width:760px">
+      <div class="card-title">Histórico de Versões</div>
+
+      <ul class="changelog-list">
+
+        <li class="changelog-item">
+          <div class="changelog-version">
+            <span class="badge-version">v1.1.0</span>
+            <span class="badge-date">27/04/2026</span>
+          </div>
+          <div class="changelog-title">Painel Admin &amp; Rastreamento de Acesso</div>
+          <ul class="changelog-changes">
+            <li>Novo painel administrativo (<code>admin.html</code>) com visão consolidada de usuários e acessos.</li>
+            <li>Registro automático de <code>appVersionLast</code> e histórico de dispositivos no Firestore a cada login.</li>
+            <li>Rodapé de versão em todas as páginas do app.</li>
+            <li>Link de Changelog adicionado à barra lateral em todas as páginas.</li>
+          </ul>
+        </li>
+
+        <li class="changelog-item">
+          <div class="changelog-version">
+            <span class="badge-version">v1.0.0</span>
+            <span class="badge-date">27/04/2026</span>
+          </div>
+          <div class="changelog-title">Lançamento Inicial do RMPF</div>
+          <ul class="changelog-changes">
+            <li>Sistema completo de produtividade fiscal com autenticação Firebase.</li>
+            <li>Dashboard com métricas de PP, PN, PV e Apuração Final.</li>
+            <li>Lançamento, edição e acompanhamento de atividades pelos fiscais.</li>
+            <li>Módulo de conferência e homologação para administradores.</li>
+            <li>Registro e revisão de ocorrências (férias, licenças, afastamentos).</li>
+            <li>Relatório de fechamento mensal com exportação para impressão.</li>
+            <li>Regras de acesso por grupo: Fiscal, Administrativo e Administrador.</li>
+          </ul>
+        </li>
+
+      </ul>
+    </div>
+  </main>
+  <footer class="app-footer nao-imprimir">
+    RMPF v<span id="footer-version"></span> — <a href="changelog.html">Changelog</a>
+  </footer>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/guard.js"></script>
+<script>
+  function buildSidebar(grupo) {
+    const links = grupo === 'Fiscal' ? [
+      ['dashboard.html','📊','Dashboard'],
+      ['lancamento.html','✏️','Lançar Atividade'],
+      ['meus-lancamentos.html','📋','Meus Lançamentos'],
+      ['conferencia.html','🔍','Conferência'],
+      ['ocorrencias.html','📌','Ocorrências'],
+    ] : [
+      ['dashboard.html','📊','Dashboard'],
+      ['conferencia.html','🔍','Conferência'],
+      ['ocorrencias.html','📌','Ocorrências'],
+      ['fechamento.html','🔒','Fechamento'],
+    ];
+    if (grupo === 'Administrador') {
+      links.push(['admin.html','⚙️','Admin']);
+    }
+    links.push(['changelog.html','📜','Changelog']);
+    const cur = location.pathname.split('/').pop();
+    return links.map(([href,icon,label]) =>
+      `<a href="${href}" class="sidebar-link${cur===href?' active':''}"><span class="icon">${icon}</span>${label}</a>`
+    ).join('');
+  }
+
+  requireAuth(user => {
+    document.getElementById('loading-overlay').style.display = 'none';
+    document.getElementById('app').style.display = '';
+    document.getElementById('header-nome').textContent = nomeCurto(user.nome || user.email);
+    document.getElementById('sidebar').innerHTML = buildSidebar(user.grupo);
+    document.getElementById('footer-version').textContent = window.APP_VERSION || '';
+
+    document.getElementById('btn-logout').addEventListener('click', () => {
+      firebase.auth().signOut().then(() => { window.location.href = 'index.html'; });
+    });
+    document.getElementById('hamburger').addEventListener('click', () => {
+      const sidebar = document.getElementById('sidebar');
+      const hamburger = document.getElementById('hamburger');
+      sidebar.classList.toggle('open');
+      hamburger.setAttribute('aria-expanded', sidebar.classList.contains('open') ? 'true' : 'false');
+    });
+  });
+</script>
+</body>
+</html>
