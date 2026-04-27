@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — RMPF</title>
+  <link rel="stylesheet" href="css/rmpf.css">
+  <style>
+    /* Pills */
+    .pill-group { display: flex; flex-wrap: wrap; gap: 8px; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 14px; border-radius: 999px; font-size: .8rem; font-weight: 600;
+      background: var(--cinzaB); color: var(--preto);
+      border: 1px solid var(--cinzaL); cursor: pointer;
+      transition: background .15s, border-color .15s;
+      white-space: nowrap;
+    }
+    .pill:hover { background: var(--verdeP); border-color: var(--verde); color: var(--verde); }
+    .pill.latest { background: var(--verdeP); border-color: var(--verde); color: var(--verde); }
+    .pill .pill-count {
+      background: var(--verde); color: var(--branco);
+      border-radius: 999px; padding: 1px 7px; font-size: .72rem;
+    }
+    .pill.latest .pill-count { background: var(--verdeC); }
+
+    /* User avatar */
+    .user-avatar {
+      width: 32px; height: 32px; border-radius: 50%; object-fit: cover;
+      background: var(--cinzaL); display: inline-block; vertical-align: middle;
+    }
+    .user-avatar-placeholder {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--cinzaL); display: inline-flex;
+      align-items: center; justify-content: center;
+      font-size: .85rem; color: var(--cinzaT); flex-shrink: 0;
+    }
+
+    /* Filter bar */
+    .filter-bar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+    .filter-bar input { max-width: 280px; }
+
+    /* Modal list */
+    .modal-user-list { list-style: none; padding: 0; margin: 0; max-height: 340px; overflow-y: auto; }
+    .modal-user-list li {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 0; border-bottom: 1px solid var(--cinzaL);
+      font-size: .85rem;
+    }
+    .modal-user-list li:last-child { border-bottom: none; }
+
+    /* Edit modal wider */
+    #modal-edit .modal { max-width: 460px; }
+  </style>
+</head>
+<body>
+
+<div id="loading-overlay" class="loading-overlay">
+  <div class="spinner spinner-lg"></div>
+  <div class="loading-text">Carregando…</div>
+</div>
+
+<div class="app-layout" id="app" style="display:none">
+  <!-- Header -->
+  <header class="app-header nao-imprimir">
+    <button class="hamburger" id="hamburger" aria-label="Menu" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <div>
+      <div class="logo-text">🏛️ RMPF</div>
+      <div class="logo-sub">Produtividade Fiscal</div>
+    </div>
+    <div class="header-right">
+      <span class="user-name" id="header-nome">—</span>
+      <button class="btn-logout" id="btn-logout">Sair</button>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <nav class="app-sidebar nao-imprimir" id="sidebar"></nav>
+
+  <!-- Main -->
+  <main class="app-main">
+    <div class="page-title">⚙️ Painel de Administração</div>
+    <div id="alert-area"></div>
+
+    <!-- ── Estatísticas gerais ── -->
+    <div class="metrics-grid" id="stats-grid">
+      <div class="metric-card azul">
+        <div class="metric-label">Fiscais</div>
+        <div class="metric-value" id="cnt-fiscal">—</div>
+      </div>
+      <div class="metric-card verde">
+        <div class="metric-label">Administrativos</div>
+        <div class="metric-value" id="cnt-adm">—</div>
+      </div>
+      <div class="metric-card amar">
+        <div class="metric-label">Administradores</div>
+        <div class="metric-value" id="cnt-admin">—</div>
+      </div>
+      <div class="metric-card verde">
+        <div class="metric-label">Ativos</div>
+        <div class="metric-value" id="cnt-ativo">—</div>
+      </div>
+      <div class="metric-card verm">
+        <div class="metric-label">Inativos</div>
+        <div class="metric-value" id="cnt-inativo">—</div>
+      </div>
+    </div>
+
+    <!-- ── Versões / Site / Modo ── -->
+    <div class="form-row cols-3" style="margin-bottom:18px">
+      <div class="card mb-0">
+        <div class="card-title">📦 Versão do App</div>
+        <div class="pill-group" id="pills-versao"></div>
+      </div>
+      <div class="card mb-0">
+        <div class="card-title">🌐 Site de Origem</div>
+        <div class="pill-group" id="pills-site"></div>
+      </div>
+      <div class="card mb-0">
+        <div class="card-title">📱 Modo de Acesso</div>
+        <div class="pill-group" id="pills-modo"></div>
+      </div>
+    </div>
+
+    <!-- ── Tabela de usuários ── -->
+    <div class="card">
+      <div class="card-title d-flex justify-between align-center">
+        <span>👥 Usuários</span>
+        <div class="filter-bar" style="margin-bottom:0">
+          <input type="search" class="form-control" id="filtro-usuario"
+                 placeholder="Filtrar por nome ou e-mail…" style="max-width:260px">
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="rmpf-table" id="tabela-usuarios">
+          <thead>
+            <tr>
+              <th></th>
+              <th>Nome</th>
+              <th>E-mail</th>
+              <th>Grupo</th>
+              <th>Status</th>
+              <th>Último Acesso</th>
+              <th>Versão App</th>
+              <th class="nao-imprimir">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-usuarios">
+            <tr class="empty-row"><td colspan="8"><div class="spinner"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ── Modal: lista por versão/site ── -->
+<div id="modal-lista" class="modal-backdrop" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <span id="modal-lista-titulo">Usuários</span>
+      <button class="modal-close" id="modal-lista-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <ul class="modal-user-list" id="modal-lista-ul"></ul>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" id="modal-lista-cancel">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: editar usuário ── -->
+<div id="modal-edit" class="modal-backdrop" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <span id="modal-edit-titulo">Editar Usuário</span>
+      <button class="modal-close" id="modal-edit-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-email">
+      <div class="form-group">
+        <label class="form-label">E-mail</label>
+        <input class="form-control" id="edit-email-display" disabled>
+      </div>
+      <div class="form-group">
+        <label class="form-label required" for="edit-nome">Nome</label>
+        <input class="form-control" id="edit-nome" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label required" for="edit-grupo">Grupo</label>
+        <select class="form-control" id="edit-grupo">
+          <option value="Fiscal">Fiscal</option>
+          <option value="Administrativo">Administrativo</option>
+          <option value="Administrador">Administrador</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label required" for="edit-status">Status</label>
+        <select class="form-control" id="edit-status">
+          <option value="Ativo">Ativo</option>
+          <option value="Inativo">Inativo</option>
+        </select>
+      </div>
+      <div id="edit-alert"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" id="btn-excluir" style="margin-right:auto">🗑️ Excluir</button>
+      <button class="btn btn-default" id="modal-edit-cancel">Cancelar</button>
+      <button class="btn btn-primary" id="btn-salvar">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/guard.js"></script>
+<script>
+  let _currentUserEmail = '';
+  let _todosUsuarios    = [];
+
+  // ── Sidebar ──────────────────────────────────────────────────
+  function buildSidebar(grupo) {
+    const links = grupo === 'Fiscal' ? [
+      { href: 'dashboard.html',       icon: '📊', label: 'Dashboard'        },
+      { href: 'lancamento.html',      icon: '✏️',  label: 'Lançar Atividade' },
+      { href: 'meus-lancamentos.html',icon: '📋', label: 'Meus Lançamentos' },
+      { href: 'conferencia.html',     icon: '🔍', label: 'Conferência'      },
+      { href: 'ocorrencias.html',     icon: '📌', label: 'Ocorrências'      },
+    ] : [
+      { href: 'dashboard.html',       icon: '📊', label: 'Dashboard'  },
+      { href: 'conferencia.html',     icon: '🔍', label: 'Conferência'},
+      { href: 'ocorrencias.html',     icon: '📌', label: 'Ocorrências'},
+      { href: 'fechamento.html',      icon: '🔒', label: 'Fechamento' },
+    ];
+    if (grupo === 'Administrador') {
+      links.push({ href: 'admin.html', icon: '⚙️', label: 'Admin' });
+    }
+    const current = location.pathname.split('/').pop();
+    return links.map(l => {
+      const active = current === l.href.split('/').pop() ? ' active' : '';
+      return `<a href="${l.href}" class="sidebar-link${active}"><span class="icon">${l.icon}</span>${l.label}</a>`;
+    }).join('');
+  }
+
+  // ── Load all users ────────────────────────────────────────────
+  async function carregarUsuarios() {
+    const snap = await firebase.firestore().collection('usuarios').get();
+    _todosUsuarios = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderEstatisticas();
+    renderPills();
+    renderTabela();
+  }
+
+  // ── Estatísticas ──────────────────────────────────────────────
+  function renderEstatisticas() {
+    const us = _todosUsuarios;
+    document.getElementById('cnt-fiscal').textContent  = us.filter(u => u.grupo === 'Fiscal').length;
+    document.getElementById('cnt-adm').textContent     = us.filter(u => u.grupo === 'Administrativo').length;
+    document.getElementById('cnt-admin').textContent   = us.filter(u => u.grupo === 'Administrador').length;
+    document.getElementById('cnt-ativo').textContent   = us.filter(u => u.status === 'Ativo').length;
+    document.getElementById('cnt-inativo').textContent = us.filter(u => u.status === 'Inativo').length;
+  }
+
+  // ── Pills ─────────────────────────────────────────────────────
+  function renderPills() {
+    const us = _todosUsuarios;
+
+    // Versões
+    const versoes = {};
+    let latestVer = '';
+    us.forEach(u => {
+      const v = u.appVersionLast || '—';
+      versoes[v] = (versoes[v] || 0) + 1;
+      if (v !== '—' && (!latestVer || compareVer(v, latestVer) > 0)) latestVer = v;
+    });
+    const pvEl = document.getElementById('pills-versao');
+    pvEl.innerHTML = Object.keys(versoes).length
+      ? Object.entries(versoes)
+          .sort(([a], [b]) => compareVer(b, a))
+          .map(([v, cnt]) => {
+            const isLatest = v === latestVer;
+            return `<button class="pill${isLatest ? ' latest' : ''}" onclick="abrirListaVersao('${escHtml(v)}')">`
+              + `${escHtml(v)} <span class="pill-count">${cnt}</span></button>`;
+          }).join('')
+      : '<span class="text-muted" style="font-size:.82rem">Sem dados</span>';
+
+    // Sites
+    const sites = {};
+    us.forEach(u => {
+      (u.dispositivos || []).forEach(d => {
+        const s = d.siteOrigem || '—';
+        sites[s] = (sites[s] || 0) + 1;
+      });
+    });
+    const psEl = document.getElementById('pills-site');
+    psEl.innerHTML = Object.keys(sites).length
+      ? Object.entries(sites)
+          .sort(([, a], [, b]) => b - a)
+          .map(([s, cnt]) =>
+            `<button class="pill" onclick="abrirListaSite('${escHtml(s)}')">${escHtml(s)} <span class="pill-count">${cnt}</span></button>`
+          ).join('')
+      : '<span class="text-muted" style="font-size:.82rem">Sem dados</span>';
+
+    // Modo de acesso
+    let pwa = 0, nav = 0;
+    us.forEach(u => {
+      (u.dispositivos || []).forEach(d => {
+        if (d.modoAcesso === 'PWA') pwa++;
+        else nav++;
+      });
+    });
+    document.getElementById('pills-modo').innerHTML =
+      `<button class="pill latest" style="cursor:default">PWA <span class="pill-count">${pwa}</span></button>`
+      + `<button class="pill" style="cursor:default">Navegador <span class="pill-count">${nav}</span></button>`;
+  }
+
+  // Simple semver compare — returns 1 if a > b, -1 if a < b, 0 if equal
+  function compareVer(a, b) {
+    const pa = String(a).split('.').map(Number);
+    const pb = String(b).split('.').map(Number);
+    for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+      const da = pa[i] || 0, db = pb[i] || 0;
+      if (da !== db) return da > db ? 1 : -1;
+    }
+    return 0;
+  }
+
+  // ── Tabela de usuários ────────────────────────────────────────
+  function renderTabela(filtro) {
+    const tbody = document.getElementById('tbody-usuarios');
+    let lista = _todosUsuarios;
+    if (filtro) {
+      const q = filtro.toLowerCase();
+      lista = lista.filter(u =>
+        (u.nome || '').toLowerCase().includes(q) ||
+        (u.email || u.id || '').toLowerCase().includes(q)
+      );
+    }
+    if (!lista.length) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="8">Nenhum usuário encontrado</td></tr>';
+      return;
+    }
+    tbody.innerHTML = lista.map(u => {
+      const email = u.email || u.id;
+      const avatar = u.photoURL
+        ? `<img class="user-avatar" src="${escHtml(u.photoURL)}" alt="" loading="lazy">`
+        : `<div class="user-avatar-placeholder">👤</div>`;
+      const ultimoAcesso = u.ultimoAcesso
+        ? fmtData(u.ultimoAcesso.toDate ? u.ultimoAcesso.toDate() : new Date(u.ultimoAcesso))
+        : '—';
+      const statusBadge = u.status === 'Ativo'
+        ? '<span class="badge badge-aceito">Ativo</span>'
+        : '<span class="badge badge-recusado">Inativo</span>';
+      const grupoBadge = u.grupo === 'Administrador'
+        ? `<span class="badge badge-cvs">${escHtml(u.grupo)}</span>`
+        : u.grupo === 'Administrativo'
+          ? `<span class="badge badge-manual">${escHtml(u.grupo)}</span>`
+          : `<span class="badge badge-pendente">${escHtml(u.grupo || '—')}</span>`;
+      const isSelf = email === _currentUserEmail;
+      return `<tr>
+        <td class="td-center">${avatar}</td>
+        <td>${escHtml(u.nome || '—')}</td>
+        <td style="font-size:.8rem">${escHtml(email)}</td>
+        <td>${grupoBadge}</td>
+        <td>${statusBadge}</td>
+        <td style="font-size:.8rem">${ultimoAcesso}</td>
+        <td style="font-size:.8rem">${escHtml(u.appVersionLast || '—')}</td>
+        <td class="nao-imprimir">
+          <button class="btn btn-outline btn-sm" onclick="abrirEdicao('${escHtml(email)}')"${isSelf ? ' disabled title="Você não pode editar seu próprio usuário"' : ''}>✏️ Editar</button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  // ── Modal: lista por versão ───────────────────────────────────
+  window.abrirListaVersao = function(versao) {
+    const lista = _todosUsuarios.filter(u => (u.appVersionLast || '—') === versao);
+    document.getElementById('modal-lista-titulo').textContent = `Versão ${versao} — ${lista.length} usuário(s)`;
+    document.getElementById('modal-lista-ul').innerHTML = lista.map(u => {
+      const email = u.email || u.id;
+      const avatar = u.photoURL
+        ? `<img class="user-avatar" src="${escHtml(u.photoURL)}" alt="" loading="lazy" style="width:28px;height:28px">`
+        : `<div class="user-avatar-placeholder" style="width:28px;height:28px;font-size:.75rem">👤</div>`;
+      return `<li>${avatar}<div><div style="font-weight:600">${escHtml(u.nome||'—')}</div><div style="font-size:.76rem;color:var(--cinzaT)">${escHtml(email)}</div></div></li>`;
+    }).join('') || '<li style="color:var(--cinzaT);font-style:italic;padding:12px 0">Nenhum usuário</li>';
+    document.getElementById('modal-lista').style.display = 'flex';
+  };
+
+  // ── Modal: lista por site ─────────────────────────────────────
+  window.abrirListaSite = function(site) {
+    const mapa = {};
+    _todosUsuarios.forEach(u => {
+      (u.dispositivos || []).forEach(d => {
+        if ((d.siteOrigem || '—') === site) mapa[u.email || u.id] = u;
+      });
+    });
+    const lista = Object.values(mapa);
+    document.getElementById('modal-lista-titulo').textContent = `Site: ${site} — ${lista.length} usuário(s)`;
+    document.getElementById('modal-lista-ul').innerHTML = lista.map(u => {
+      const email = u.email || u.id;
+      const avatar = u.photoURL
+        ? `<img class="user-avatar" src="${escHtml(u.photoURL)}" alt="" loading="lazy" style="width:28px;height:28px">`
+        : `<div class="user-avatar-placeholder" style="width:28px;height:28px;font-size:.75rem">👤</div>`;
+      return `<li>${avatar}<div><div style="font-weight:600">${escHtml(u.nome||'—')}</div><div style="font-size:.76rem;color:var(--cinzaT)">${escHtml(email)}</div></div></li>`;
+    }).join('') || '<li style="color:var(--cinzaT);font-style:italic;padding:12px 0">Nenhum usuário</li>';
+    document.getElementById('modal-lista').style.display = 'flex';
+  };
+
+  // ── Modal: editar usuário ─────────────────────────────────────
+  window.abrirEdicao = function(email) {
+    const u = _todosUsuarios.find(x => (x.email || x.id) === email);
+    if (!u) return;
+    document.getElementById('edit-email').value         = email;
+    document.getElementById('edit-email-display').value = email;
+    document.getElementById('edit-nome').value          = u.nome || '';
+    document.getElementById('edit-grupo').value         = u.grupo || 'Fiscal';
+    document.getElementById('edit-status').value        = u.status || 'Ativo';
+    document.getElementById('edit-alert').innerHTML     = '';
+
+    const isSelf = email === _currentUserEmail;
+    document.getElementById('edit-nome').disabled   = isSelf;
+    document.getElementById('edit-grupo').disabled  = isSelf;
+    document.getElementById('edit-status').disabled = isSelf;
+    document.getElementById('btn-salvar').disabled  = isSelf;
+    document.getElementById('btn-excluir').disabled = isSelf;
+
+    if (isSelf) {
+      document.getElementById('edit-alert').innerHTML =
+        alerta('warn', 'Você não pode editar ou excluir seu próprio usuário.');
+    }
+
+    document.getElementById('modal-edit').style.display = 'flex';
+  };
+
+  async function salvarEdicao() {
+    const email = document.getElementById('edit-email').value;
+    const nome  = document.getElementById('edit-nome').value.trim();
+    const grupo = document.getElementById('edit-grupo').value;
+    const status= document.getElementById('edit-status').value;
+    const alertEl = document.getElementById('edit-alert');
+
+    if (!nome) {
+      alertEl.innerHTML = alerta('warn', 'O nome não pode estar em branco.');
+      return;
+    }
+    if (email === _currentUserEmail) return;
+
+    try {
+      await firebase.firestore().collection('usuarios').doc(email).update({ nome, grupo, status });
+      // Update local cache
+      const idx = _todosUsuarios.findIndex(u => (u.email || u.id) === email);
+      if (idx >= 0) Object.assign(_todosUsuarios[idx], { nome, grupo, status });
+      document.getElementById('modal-edit').style.display = 'none';
+      document.getElementById('alert-area').innerHTML = alerta('ok', `Usuário <strong>${escHtml(email)}</strong> atualizado com sucesso.`);
+      renderEstatisticas();
+      renderPills();
+      renderTabela(document.getElementById('filtro-usuario').value);
+    } catch(e) {
+      alertEl.innerHTML = alerta('danger', 'Erro ao salvar: ' + escHtml(e.message));
+    }
+  }
+
+  async function excluirUsuario() {
+    const email = document.getElementById('edit-email').value;
+    if (email === _currentUserEmail) return;
+    if (!confirm(`Confirmar exclusão do usuário "${email}"? Esta ação não pode ser desfeita.`)) return;
+    try {
+      await firebase.firestore().collection('usuarios').doc(email).delete();
+      _todosUsuarios = _todosUsuarios.filter(u => (u.email || u.id) !== email);
+      document.getElementById('modal-edit').style.display = 'none';
+      document.getElementById('alert-area').innerHTML = alerta('ok', `Usuário <strong>${escHtml(email)}</strong> excluído.`);
+      renderEstatisticas();
+      renderPills();
+      renderTabela(document.getElementById('filtro-usuario').value);
+    } catch(e) {
+      document.getElementById('edit-alert').innerHTML = alerta('danger', 'Erro ao excluir: ' + escHtml(e.message));
+    }
+  }
+
+  // ── Event bindings ────────────────────────────────────────────
+  document.getElementById('btn-salvar').addEventListener('click', salvarEdicao);
+  document.getElementById('btn-excluir').addEventListener('click', excluirUsuario);
+  ['modal-edit-close', 'modal-edit-cancel'].forEach(id => {
+    document.getElementById(id).addEventListener('click', () => {
+      document.getElementById('modal-edit').style.display = 'none';
+    });
+  });
+  ['modal-lista-close', 'modal-lista-cancel'].forEach(id => {
+    document.getElementById(id).addEventListener('click', () => {
+      document.getElementById('modal-lista').style.display = 'none';
+    });
+  });
+  document.getElementById('filtro-usuario').addEventListener('input', e => {
+    renderTabela(e.target.value);
+  });
+
+  // ── Init ──────────────────────────────────────────────────────
+  requireAuth(async user => {
+    // Only Administrador may access this page
+    if (user.grupo !== 'Administrador') {
+      window.location.href = 'dashboard.html';
+      return;
+    }
+
+    _currentUserEmail = user.email;
+
+    document.getElementById('loading-overlay').style.display = 'none';
+    document.getElementById('app').style.display = '';
+    document.getElementById('header-nome').textContent = nomeCurto(user.nome || user.email);
+    document.getElementById('sidebar').innerHTML = buildSidebar(user.grupo);
+
+    document.getElementById('btn-logout').addEventListener('click', () => {
+      firebase.auth().signOut().then(() => { window.location.href = 'index.html'; });
+    });
+    document.getElementById('hamburger').addEventListener('click', () => {
+      const sidebar = document.getElementById('sidebar');
+      sidebar.classList.toggle('open');
+      document.getElementById('hamburger').setAttribute('aria-expanded',
+        sidebar.classList.contains('open') ? 'true' : 'false');
+    });
+
+    try {
+      await carregarUsuarios();
+    } catch(e) {
+      document.getElementById('alert-area').innerHTML = alerta('danger', 'Erro ao carregar usuários: ' + escHtml(e.message));
+    }
+  });
+</script>
+</body>
+</html>
