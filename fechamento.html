@@ -246,8 +246,8 @@
     const aceitas = _manuais.filter(m => m.status === 'aceito');
     const tbodyAtiv = document.getElementById('tbody-ativ');
     tbodyAtiv.innerHTML = aceitas.length ? aceitas.map(m =>
-      `<tr><td><span class="ctrl-num">${m.controle||'—'}</span></td><td>${fmtData(m.data)}</td>
-       <td>${m.tipo_nome||m.tipo_codigo||'—'}</td><td>${m.descricao||'—'}</td>
+      `<tr><td><span class="ctrl-num">${escHtml(m.controle||'—')}</span></td><td>${fmtData(m.data)}</td>
+       <td>${escHtml(m.tipo_nome||m.tipo_codigo||'—')}</td><td>${escHtml(m.descricao||'—')}</td>
        <td class="td-num">${m.pontos_homologado??m.pontos}</td></tr>`
     ).join('') : '<tr class="empty-row"><td colspan="5">Nenhuma atividade aceita</td></tr>';
 
@@ -270,10 +270,10 @@
     document.getElementById('rel-apur').textContent  = `R$ ${_result.apuracao},00`;
 
     document.getElementById('rel-tbody-ativ').innerHTML = aceitas.length ? aceitas.map(m =>
-      `<tr><td style="border:1px solid #ccc;padding:4px 7px">${m.controle||'—'}</td>
+      `<tr><td style="border:1px solid #ccc;padding:4px 7px">${escHtml(m.controle||'—')}</td>
        <td style="border:1px solid #ccc;padding:4px 7px">${fmtData(m.data)}</td>
-       <td style="border:1px solid #ccc;padding:4px 7px">${m.tipo_nome||m.tipo_codigo||'—'}</td>
-       <td style="border:1px solid #ccc;padding:4px 7px">${m.descricao||'—'}</td>
+       <td style="border:1px solid #ccc;padding:4px 7px">${escHtml(m.tipo_nome||m.tipo_codigo||'—')}</td>
+       <td style="border:1px solid #ccc;padding:4px 7px">${escHtml(m.descricao||'—')}</td>
        <td style="border:1px solid #ccc;padding:4px 7px;text-align:right">${m.pontos_homologado??m.pontos}</td></tr>`
     ).join('') : '<tr><td colspan="5" style="padding:8px;text-align:center;color:#999">Sem atividades</td></tr>';
 

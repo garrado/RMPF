@@ -259,12 +259,12 @@
       } else if (isAdmin) {
         acoes = `<button class="btn btn-default btn-sm" onclick="abrirRev('${o.id}')">✏️ Rever</button>`;
       }
-      const fiscalCol = (_grupo !== 'Fiscal') ? `<td>${o.fiscal_nome||o.fiscal_email}</td>` : '';
+      const fiscalCol = (_grupo !== 'Fiscal') ? `<td>${escHtml(o.fiscal_nome||o.fiscal_email)}</td>` : '';
       return `<tr>
         ${fiscalCol}
-        <td>${TIPO_LABELS[o.tipo]||o.tipo}</td>
+        <td>${TIPO_LABELS[o.tipo]||escHtml(o.tipo)}</td>
         <td>${periodo}</td>
-        <td>${o.descricao||'—'}</td>
+        <td>${escHtml(o.descricao||'—')}</td>
         <td>${badge(o.status)}</td>
         <td class="nao-imprimir">${acoes}</td>
       </tr>`;

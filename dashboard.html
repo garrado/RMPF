@@ -218,10 +218,10 @@
       tbody.innerHTML = manuais.map(m => {
         const tipo = TIPOS_ATIVIDADE.find(t => t.codigo === m.tipo_codigo) || {};
         return `<tr>
-          <td><span class="ctrl-num">${m.controle || '—'}</span></td>
+          <td><span class="ctrl-num">${escHtml(m.controle || '—')}</span></td>
           <td>${fmtData(m.data)}</td>
-          <td>${tipo.nome || m.tipo_codigo || '—'}</td>
-          <td>${m.descricao || '—'}</td>
+          <td>${tipo.nome ? escHtml(tipo.nome) : escHtml(m.tipo_codigo || '—')}</td>
+          <td>${escHtml(m.descricao || '—')}</td>
           <td class="td-num">${m.pontos ?? '—'}</td>
           <td class="td-num">${m.pontos_homologado != null ? m.pontos_homologado : '—'}</td>
           <td>${badge(m.status)}</td>
@@ -255,7 +255,7 @@
         const result    = calcular([], manuais, 0);
         const pendentes = manuais.filter(m => m.status === 'enviado').length;
         return `<tr>
-          <td>${f.nome || f.id}</td>
+          <td>${escHtml(f.nome || f.id)}</td>
           <td class="td-num">${result.pp}</td>
           <td class="td-num">${result.pn}</td>
           <td class="td-num">${result.pv}</td>
