@@ -52,18 +52,11 @@
       alertArea.innerHTML = `<div class="alert alert-danger mb-2"><span class="alert-icon">🚨</span><div>${msg}</div></div>`;
     }
 
-    // Check if already authenticated
+    // Shared machines: never auto-redirect.
+    // Force logout so the next user can choose their own account.
     firebase.auth().onAuthStateChanged(async (user) => {
       if (user) {
-        try {
-          const snap = await firebase.firestore().collection('usuarios').doc(user.email).get();
-          if (snap.exists && snap.data().status !== 'Inativo') {
-            window.location.href = 'dashboard.html';
-            return;
-          } else {
-            await firebase.auth().signOut();
-          }
-        } catch (_) {}
+        try { await firebase.auth().signOut(); } catch (_) {}
       }
       overlay.style.display = 'none';
       loginPage.style.display = 'flex';
