@@ -1,0 +1,28 @@
+name: Mirror to Corporate GitHub
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  mirror:
+    name: Mirror to VisaAnapolis/RMPF
+    runs-on: ubuntu-latest
+    if: github.repository == 'garrado/RMPF'
+
+    steps:
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_DEPLOY_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+      - name: Clone bare repository
+        run: |
+          git clone --bare https://github.com/garrado/RMPF.git repo-mirror
+      - name: Push mirror to corporate repository
+        run: |
+          cd repo-mirror
+          git push --mirror git@github.com:VisaAnapolis/RMPF.git
