@@ -233,13 +233,13 @@
       tbody.innerHTML = manuais.map(m => {
         const tipo = TIPOS_ATIVIDADE.find(t => t.codigo === m.tipo_codigo) || {};
         return `<tr>
-          <td><span class="ctrl-num">${escHtml(m.controle || '—')}</span></td>
-          <td>${fmtData(m.data)}</td>
-          <td>${tipo.nome ? escHtml(tipo.nome) : escHtml(m.tipo_codigo || '—')}</td>
-          <td>${escHtml(m.descricao || '—')}</td>
-          <td class="td-num">${m.pontos ?? '—'}</td>
-          <td class="td-num">${m.pontos_homologado != null ? m.pontos_homologado : '—'}</td>
-          <td>${badge(m.status)}</td>
+          <td data-label="Controle"><span class="ctrl-num">${escHtml(m.controle || '—')}</span></td>
+          <td data-label="Data">${fmtData(m.data)}</td>
+          <td data-label="Tipo">${tipo.nome ? escHtml(tipo.nome) : escHtml(m.tipo_codigo || '—')}</td>
+          <td data-label="Descrição">${escHtml(m.descricao || '—')}</td>
+          <td data-label="Pts Req." class="td-num">${m.pontos ?? '—'}</td>
+          <td data-label="Pts Hom." class="td-num">${m.pontos_homologado != null ? m.pontos_homologado : '—'}</td>
+          <td data-label="Status">${badge(m.status)}</td>
         </tr>`;
       }).join('');
     } catch (e) {
@@ -270,13 +270,13 @@
         const result    = calcular([], manuais, 0);
         const pendentes = manuais.filter(m => m.status === 'enviado').length;
         return `<tr>
-          <td>${escHtml(f.nome || f.id)}</td>
-          <td class="td-num">${result.pp}</td>
-          <td class="td-num">${result.pn}</td>
-          <td class="td-num">${result.pv}</td>
-          <td class="td-num fw-bold ${result.apuracao > 0 ? 'text-verde' : ''}">${result.apuracao}</td>
-          <td class="td-num">${pendentes > 0 ? `<span class="badge badge-pendente">${pendentes}</span>` : '—'}</td>
-          <td class="nao-imprimir">
+          <td data-label="Fiscal">${escHtml(f.nome || f.id)}</td>
+          <td data-label="PP" class="td-num">${result.pp}</td>
+          <td data-label="PN" class="td-num">${result.pn}</td>
+          <td data-label="PV" class="td-num">${result.pv}</td>
+          <td data-label="Apuração" class="td-num fw-bold ${result.apuracao > 0 ? 'text-verde' : ''}">${result.apuracao}</td>
+          <td data-label="Pendentes" class="td-num">${pendentes > 0 ? `<span class="badge badge-pendente">${pendentes}</span>` : '—'}</td>
+          <td data-label="Ações" class="nao-imprimir">
             <a href="conferencia.html?fiscal=${encodeURIComponent(f.email || f.id)}&mes=${mes}&ano=${ano}" class="btn btn-outline btn-sm">Conferir</a>
           </td>
         </tr>`;
