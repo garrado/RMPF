@@ -174,7 +174,7 @@
 <div id="modal-edit" class="modal-backdrop" style="display:none">
   <div class="modal">
     <div class="modal-header">
-      <span id="modal-edit-titulo">Editar Usuário</span>
+      <span id="modal-edit-titulo">Dados do Usuário</span>
       <button class="modal-close" id="modal-edit-close">✕</button>
     </div>
     <div class="modal-body">
@@ -184,11 +184,11 @@
         <input class="form-control" id="edit-email-display" disabled>
       </div>
       <div class="form-group">
-        <label class="form-label required" for="edit-nome">Nome</label>
+        <label class="form-label" for="edit-nome">Nome</label>
         <input class="form-control" id="edit-nome" required>
       </div>
       <div class="form-group">
-        <label class="form-label required" for="edit-grupo">Grupo</label>
+        <label class="form-label" for="edit-grupo">Grupo</label>
         <select class="form-control" id="edit-grupo">
           <option value="Fiscal">Fiscal</option>
           <option value="Administrativo">Administrativo</option>
@@ -196,7 +196,7 @@
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label required" for="edit-status">Status</label>
+        <label class="form-label" for="edit-status">Status</label>
         <select class="form-control" id="edit-status">
           <option value="Ativo">Ativo</option>
           <option value="Inativo">Inativo</option>
@@ -205,9 +205,9 @@
       <div id="edit-alert"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-danger" id="btn-excluir" style="margin-right:auto">🗑️ Excluir</button>
-      <button class="btn btn-default" id="modal-edit-cancel">Cancelar</button>
-      <button class="btn btn-primary" id="btn-salvar">💾 Salvar</button>
+      <button class="btn btn-danger" id="btn-excluir" style="margin-right:auto;display:none">🗑️ Excluir</button>
+      <button class="btn btn-default" id="modal-edit-cancel">Fechar</button>
+      <button class="btn btn-primary" id="btn-salvar" style="display:none">💾 Salvar</button>
     </div>
   </div>
 </div>
@@ -375,7 +375,7 @@
         <td style="font-size:.8rem">${ultimoAcesso}</td>
         <td style="font-size:.8rem">${escHtml(u.appVersionLast || '—')}</td>
         <td class="nao-imprimir">
-          <button class="btn btn-outline btn-sm" onclick="abrirEdicao('${escHtml(email)}')"${isSelf ? ' disabled title="Você não pode editar seu próprio usuário"' : ''}>✏️ Editar</button>
+          <button class="btn btn-outline btn-sm" onclick="abrirEdicao('${escHtml(email)}')">👁️ Ver</button>
         </td>
       </tr>`;
     }).join('');
@@ -424,71 +424,21 @@
     document.getElementById('edit-nome').value          = u.nome || '';
     document.getElementById('edit-grupo').value         = u.grupo || 'Fiscal';
     document.getElementById('edit-status').value        = u.status || 'Ativo';
-    document.getElementById('edit-alert').innerHTML     = '';
 
-    const isSelf = email === _currentUserEmail;
-    document.getElementById('edit-nome').disabled   = isSelf;
-    document.getElementById('edit-grupo').disabled  = isSelf;
-    document.getElementById('edit-status').disabled = isSelf;
-    document.getElementById('btn-salvar').disabled  = isSelf;
-    document.getElementById('btn-excluir').disabled = isSelf;
+    // All fields are read-only — changes must be made in the VISA app
+    document.getElementById('edit-nome').disabled   = true;
+    document.getElementById('edit-grupo').disabled  = true;
+    document.getElementById('edit-status').disabled = true;
+    document.getElementById('btn-salvar').style.display  = 'none';
+    document.getElementById('btn-excluir').style.display = 'none';
 
-    if (isSelf) {
-      document.getElementById('edit-alert').innerHTML =
-        alerta('warn', 'Você não pode editar ou excluir seu próprio usuário.');
-    }
+    document.getElementById('edit-alert').innerHTML =
+      alerta('info', 'Os dados do usuário são somente leitura neste sistema. Para realizar alterações, acesse o <strong>APP VISA</strong>.');
 
     document.getElementById('modal-edit').style.display = 'flex';
   };
 
-  async function salvarEdicao() {
-    const email = document.getElementById('edit-email').value;
-    const nome  = document.getElementById('edit-nome').value.trim();
-    const grupo = document.getElementById('edit-grupo').value;
-    const status= document.getElementById('edit-status').value;
-    const alertEl = document.getElementById('edit-alert');
-
-    if (!nome) {
-      alertEl.innerHTML = alerta('warn', 'O nome não pode estar em branco.');
-      return;
-    }
-    if (email === _currentUserEmail) return;
-
-    try {
-      await db_updateUsuario(email, { nome, grupo, status });
-      // Update local cache
-      const idx = _todosUsuarios.findIndex(u => (u.email || u.id) === email);
-      if (idx >= 0) Object.assign(_todosUsuarios[idx], { nome, grupo, status });
-      document.getElementById('modal-edit').style.display = 'none';
-      document.getElementById('alert-area').innerHTML = alerta('ok', `Usuário <strong>${escHtml(email)}</strong> atualizado com sucesso.`);
-      renderEstatisticas();
-      renderPills();
-      renderTabela(document.getElementById('filtro-usuario').value);
-    } catch(e) {
-      alertEl.innerHTML = alerta('danger', 'Erro ao salvar: ' + escHtml(e.message));
-    }
-  }
-
-  async function excluirUsuario() {
-    const email = document.getElementById('edit-email').value;
-    if (email === _currentUserEmail) return;
-    if (!confirm(`Confirmar exclusão do usuário "${email}"? Esta ação não pode ser desfeita.`)) return;
-    try {
-      await db_deleteUsuario(email);
-      _todosUsuarios = _todosUsuarios.filter(u => (u.email || u.id) !== email);
-      document.getElementById('modal-edit').style.display = 'none';
-      document.getElementById('alert-area').innerHTML = alerta('ok', `Usuário <strong>${escHtml(email)}</strong> excluído.`);
-      renderEstatisticas();
-      renderPills();
-      renderTabela(document.getElementById('filtro-usuario').value);
-    } catch(e) {
-      document.getElementById('edit-alert').innerHTML = alerta('danger', 'Erro ao excluir: ' + escHtml(e.message));
-    }
-  }
-
   // ── Event bindings ────────────────────────────────────────────
-  document.getElementById('btn-salvar').addEventListener('click', salvarEdicao);
-  document.getElementById('btn-excluir').addEventListener('click', excluirUsuario);
   ['modal-edit-close', 'modal-edit-cancel'].forEach(id => {
     document.getElementById(id).addEventListener('click', () => {
       document.getElementById('modal-edit').style.display = 'none';
