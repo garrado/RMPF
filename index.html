@@ -78,28 +78,28 @@
             if ('caches' in window) {
               caches.keys().then(function (cacheNames) {
                 return Promise.all(cacheNames.map(function (name) { return caches.delete(name); }));
-              }).then(function () { location.reload(true); });
+              }).then(function () { location.reload(); });
             } else {
-              location.reload(true);
+              location.reload();
             }
           });
         });
       } else {
-        location.reload(true);
+        location.reload();
       }
     }
 
     // ── VERIFICAÇÃO PERIÓDICA DE ATUALIZAÇÃO ──────────────────────────────────
     async function checkVersionUpdate() {
       try {
-        const resp = await fetch('./index.html?t=' + Date.now());
+        const resp = await fetch('./js/version.js?t=' + Date.now());
         if (!resp.ok) return;
-        const html = await resp.text();
-        const match = html.match(/APP_VERSION\s*=\s*['"]?([\d.]+)['"]?/);
+        const text = await resp.text();
+        const match = text.match(/APP_VERSION\s*=\s*['"]?([\d.]+)['"]?/);
         if (match && match[1] !== APP_VERSION) {
           console.log('\uD83D\uDD04 [VersionCheck] Nova versão detectada: ' + match[1] + '. Forçando atualização...');
           localStorage.setItem(VERSION_KEY, match[1]);
-          location.reload(true);
+          location.reload();
         }
       } catch (e) {
         console.warn('[VersionCheck] Falha ao verificar versão:', e);
