@@ -196,7 +196,7 @@
             rmpf_modoAcesso:      isPWA ? 'PWA' : 'Navegador',
             rmpf_tamanhoTela:     screen.width + 'x' + screen.height,
           });
-        } catch (_) {}
+        } catch (e) { console.warn('Falha ao registrar dados do dispositivo:', e); }
 
         window.location.href = 'dashboard.html';
       } catch (err) {
