@@ -13,19 +13,8 @@
   <link rel="manifest"                     href="manifest.webmanifest">
   <meta name="theme-color" content="#1565c0">
   <style>
-    /* Fiscal dashboard: fixed 4-col grid so Apuração Final fills the row below */
-    #view-fiscal .metrics-grid {
-      grid-template-columns: repeat(4, 1fr);
-    }
-    .metric-card-wide {
-      grid-column: 2 / span 2;
-    }
+    /* Mobile: Apuração Final spans both columns for symmetry */
     @media (max-width: 768px) {
-      #view-fiscal .metrics-grid { grid-template-columns: repeat(2, 1fr); }
-      .metric-card-wide { grid-column: span 2; }
-    }
-    @media (max-width: 480px) {
-      #view-fiscal .metrics-grid { grid-template-columns: 1fr 1fr; }
       .metric-card-wide { grid-column: span 2; }
     }
   </style>
