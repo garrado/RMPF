@@ -264,6 +264,76 @@ async function releaseVisaImportLock(mes, ano) {
   await window.db.collection('visa_import_locks').doc(docId).delete();
 }
 
+// ── SIM Manuais (importados do CSV auditoria.csv) ────────
+
+function _simDocId(osNum, fiscalEmail) {
+  return 'sim_' + String(osNum).trim() + '_' +
+    String(fiscalEmail).replace(/[.@+]/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+}
+
+async function getSIMManual(osNum, fiscalEmail) {
+  const id   = _simDocId(osNum, fiscalEmail);
+  const snap = await window.db.collection('manuais').doc(id).get();
+  return snap.exists ? { id: snap.id, ...snap.data() } : null;
+}
+
+async function upsertSIMManual(osNum, fiscalEmail, data, existingId, isNew) {
+  const id  = existingId || _simDocId(osNum, fiscalEmail);
+  const ref = window.db.collection('manuais').doc(id);
+  if (isNew) {
+    await ref.set({
+      ...data,
+      fiscal_email: fiscalEmail,
+      created_at: firebase.firestore.FieldValue.serverTimestamp(),
+      updated_at: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+  } else {
+    await ref.update({
+      ...data,
+      updated_at: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+  }
+  return id;
+}
+
+// ── SIM Import Lock ──────────────────────────────────────
+// Uses a Firestore transaction so the check+set is atomic.
+// Lock document: sim_import_locks/{ano}-{mes}
+// A stale lock (> 3 min) is automatically overridden as a safety net.
+
+function _simLockDocId(mes, ano) {
+  return `${ano}-${String(mes).padStart(2, '0')}`;
+}
+
+async function acquireSimImportLock(mes, ano, fiscalEmail, fiscalNome) {
+  const docId = _simLockDocId(mes, ano);
+  const ref = window.db.collection('sim_import_locks').doc(docId);
+  await window.db.runTransaction(async tx => {
+    const snap = await tx.get(ref);
+    if (snap.exists) {
+      const data = snap.data();
+      const lockedAt = data.locked_at?.toMillis?.() || 0;
+      const ageMs = Date.now() - lockedAt;
+      const STALE_MS = 3 * 60 * 1000; // 3 min safety net
+      if (ageMs < STALE_MS) {
+        throw new Error(
+          `Importação SIM já em andamento por ${data.locked_by_nome || data.locked_by}. Aguarde a conclusão.`
+        );
+      }
+    }
+    tx.set(ref, {
+      locked_by:      fiscalEmail,
+      locked_by_nome: fiscalNome || fiscalEmail,
+      locked_at:      firebase.firestore.FieldValue.serverTimestamp(),
+    });
+  });
+}
+
+async function releaseSimImportLock(mes, ano) {
+  const docId = _simLockDocId(mes, ano);
+  await window.db.collection('sim_import_locks').doc(docId).delete();
+}
+
 // ── Exports ──────────────────────────────────────────────
 
 window.db_getManuais          = getManuais;
@@ -289,3 +359,7 @@ window.db_getVISAManual        = getVISAManual;
 window.db_upsertVISAManual     = upsertVISAManual;
 window.db_acquireVisaImportLock = acquireVisaImportLock;
 window.db_releaseVisaImportLock = releaseVisaImportLock;
+window.db_getSIMManual          = getSIMManual;
+window.db_upsertSIMManual       = upsertSIMManual;
+window.db_acquireSimImportLock  = acquireSimImportLock;
+window.db_releaseSimImportLock  = releaseSimImportLock;
