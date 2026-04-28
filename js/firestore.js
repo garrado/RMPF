@@ -244,7 +244,7 @@ async function acquireVisaImportLock(mes, ano, fiscalEmail, fiscalNome) {
       const data = snap.data();
       const lockedAt = data.locked_at?.toMillis?.() || 0;
       const ageMs = Date.now() - lockedAt;
-      const STALE_MS = 30 * 60 * 1000; // 30 min safety net
+      const STALE_MS = 3 * 60 * 1000; // 3 min safety net
       if (ageMs < STALE_MS) {
         throw new Error(
           `Importação já em andamento por ${data.locked_by_nome || data.locked_by}. Aguarde a conclusão.`
