@@ -368,13 +368,13 @@
       const isSelf = email === _currentUserEmail;
       return `<tr>
         <td class="td-center">${avatar}</td>
-        <td>${escHtml(u.nome || '—')}</td>
-        <td style="font-size:.8rem">${escHtml(email)}</td>
-        <td>${grupoBadge}</td>
-        <td>${statusBadge}</td>
-        <td style="font-size:.8rem">${ultimoAcesso}</td>
-        <td style="font-size:.8rem">${escHtml(u.rmpf_appVersion || '—')}</td>
-        <td class="nao-imprimir">
+        <td data-label="Nome">${escHtml(u.nome || '—')}</td>
+        <td data-label="E-mail" style="font-size:.8rem">${escHtml(email)}</td>
+        <td data-label="Grupo">${grupoBadge}</td>
+        <td data-label="Status">${statusBadge}</td>
+        <td data-label="Último Acesso" style="font-size:.8rem">${ultimoAcesso}</td>
+        <td data-label="Versão App" style="font-size:.8rem">${escHtml(u.rmpf_appVersion || '—')}</td>
+        <td data-label="Ações" class="nao-imprimir">
           <button class="btn btn-outline btn-sm" onclick="abrirEdicao('${escHtml(email)}')">👁️ Ver</button>
         </td>
       </tr>`;
