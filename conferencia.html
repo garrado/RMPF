@@ -347,13 +347,16 @@
   requireAuth(async user => {
     _user  = user;
     _grupo = user.grupo;
+    if (user.grupo !== 'Fiscal' && user.grupo !== 'Administrador') {
+      window.location.href = 'dashboard.html'; return;
+    }
     document.getElementById('loading-overlay').style.display = 'none';
     document.getElementById('app').style.display = '';
     document.getElementById('header-nome').textContent = nomeCurto(user.nome||user.email);
     document.getElementById('sidebar').innerHTML = buildSidebar(user.grupo);
     document.getElementById('footer-version').textContent = window.APP_VERSION || '';
 
-    // Fiscal only sees own data
+    // Fiscal sees own data; Administrador sees all fiscais
     if (user.grupo === 'Fiscal') {
       const sel = document.getElementById('sel-fiscal');
       sel.innerHTML = `<option value="${escHtml(user.email)}">${escHtml(user.nome||user.email)}</option>`;
@@ -364,20 +367,18 @@
       await loadFiscais();
     }
 
-    // ── Importação VISA (admin/administrativo) ───────────
+    // ── Importação VISA e SIM (Administrador) ───────────
     const btnImportVisa      = document.getElementById('btn-import-visa');
     const btnImportVisaTodos = document.getElementById('btn-import-visa-todos');
     const btnImportSim       = document.getElementById('btn-import-sim');
     const btnImportSimTodos  = document.getElementById('btn-import-sim-todos');
     const btnApagarTodos     = document.getElementById('btn-apagar-todos');
-    if (_grupo !== 'Fiscal') {
+    if (_grupo === 'Administrador') {
       btnImportVisa.style.display      = '';
       btnImportVisaTodos.style.display = '';
       btnImportSim.style.display       = '';
       btnImportSimTodos.style.display  = '';
-    }
-    if (_grupo === 'Administrador') {
-      btnApagarTodos.style.display = '';
+      btnApagarTodos.style.display     = '';
     }
 
     function atualizarBtnImportConf() {

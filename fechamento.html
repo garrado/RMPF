@@ -408,7 +408,7 @@
 
   requireAuth(async user => {
     _user = user;
-    if (user.grupo !== 'Administrador' && user.grupo !== 'Administrativo') {
+    if (user.grupo !== 'Administrador') {
       window.location.href = 'dashboard.html'; return;
     }
     document.getElementById('loading-overlay').style.display = 'none';

@@ -324,6 +324,9 @@
   requireAuth(async user => {
     _user  = user;
     _grupo = user.grupo;
+    if (user.grupo !== 'Fiscal' && user.grupo !== 'Administrador') {
+      window.location.href = 'dashboard.html'; return;
+    }
     document.getElementById('loading-overlay').style.display = 'none';
     document.getElementById('app').style.display = '';
     document.getElementById('header-nome').textContent = nomeCurto(user.nome||user.email);
@@ -337,7 +340,7 @@
       buildSels('o-mes','o-ano');
       document.getElementById('btn-registrar').addEventListener('click', registrarOcorrencia);
     } else {
-      // Admin/Administrativo: show fiscal filter
+      // Administrador: show fiscal filter and actions
       document.getElementById('sel-fiscal').style.display = '';
       document.getElementById('th-fiscal-col').style.display = '';
       const fiscais = await db_getTodosFiscais();
@@ -347,9 +350,6 @@
         o.value = f.email||f.id; o.textContent = f.nome||f.id;
         selF.appendChild(o);
       });
-      if (user.grupo !== 'Administrador') {
-        document.getElementById('th-acoes').style.display = 'none';
-      }
     }
 
     loadOcorrencias();

@@ -165,6 +165,9 @@
   }
 
   requireAuth(user => {
+    if (user.grupo !== 'Fiscal' && user.grupo !== 'Administrador') {
+      window.location.href = 'dashboard.html'; return;
+    }
     document.getElementById('loading-overlay').style.display = 'none';
     document.getElementById('app').style.display = '';
     document.getElementById('header-nome').textContent = nomeCurto(user.nome || user.email);
