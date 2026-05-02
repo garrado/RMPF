@@ -128,7 +128,7 @@
       </div>
     </div>
 
-    <!-- Admin / Administrativo view -->
+    <!-- Admin / Administrador view -->
     <div id="view-admin" style="display:none">
       <div id="alert-admin"></div>
 
@@ -162,6 +162,16 @@
         </div>
       </div>
     </div>
+
+    <!-- Administrativo: presentation view -->
+    <div id="view-presentation" style="display:none">
+      <div class="card" style="max-width:560px">
+        <div class="card-title">🏛️ Bem-vindo ao RMPF</div>
+        <p>O <strong>Relatório Mensal de Produtividade Fiscal (RMPF)</strong> é o sistema de apuração de produtividade da Divisão de Fiscalização da Vigilância Sanitária de Anápolis.</p>
+        <p>Neste sistema, os fiscais registram suas atividades mensais, que são conferidas e homologadas pelos administradores para fins de cálculo da produtividade.</p>
+        <p style="color:var(--cinzaM);font-size:.9rem">Seu perfil (<strong>Administrativo</strong>) possui acesso de visualização a esta página.</p>
+      </div>
+    </div>
   </main>
   <footer class="app-footer nao-imprimir">
     RMPF v<span id="footer-version"></span> — <a href="changelog.html">Changelog</a>
@@ -180,22 +190,30 @@
 <script>
   // ── Sidebar helper ────────────────────────────────────────
   function buildSidebar(grupo) {
-    const links = grupo === 'Fiscal' ? [
-      { href: 'dashboard.html',        icon: '📊', label: 'Dashboard'          },
-      { href: 'lancamento.html',        icon: '✏️',  label: 'Lançar Atividade'   },
-      { href: 'meus-lancamentos.html',  icon: '📋', label: 'Meus Lançamentos'   },
-      { href: 'conferencia.html',       icon: '🔍', label: 'Conferência'        },
-      { href: 'ocorrencias.html',       icon: '📌', label: 'Ocorrências'        },
-    ] : [
-      { href: 'dashboard.html',         icon: '📊', label: 'Dashboard'          },
-      { href: 'conferencia.html',        icon: '🔍', label: 'Conferência'        },
-      { href: 'ocorrencias.html',        icon: '📌', label: 'Ocorrências'        },
-      { href: 'fechamento.html',         icon: '🔒', label: 'Fechamento'         },
-    ];
-    if (grupo === 'Administrador') {
-      links.push({ href: 'admin.html', icon: '⚙️', label: 'Admin' });
+    let links;
+    if (grupo === 'Fiscal') {
+      links = [
+        { href: 'dashboard.html',        icon: '📊', label: 'Dashboard'        },
+        { href: 'lancamento.html',        icon: '✏️',  label: 'Lançar Atividade' },
+        { href: 'meus-lancamentos.html',  icon: '📋', label: 'Meus Lançamentos' },
+        { href: 'conferencia.html',       icon: '🔍', label: 'Conferência'      },
+        { href: 'ocorrencias.html',       icon: '📌', label: 'Ocorrências'      },
+        { href: 'changelog.html',         icon: '📜', label: 'Changelog'        },
+      ];
+    } else if (grupo === 'Administrador') {
+      links = [
+        { href: 'dashboard.html',   icon: '📊', label: 'Dashboard'   },
+        { href: 'conferencia.html', icon: '🔍', label: 'Conferência' },
+        { href: 'ocorrencias.html', icon: '📌', label: 'Ocorrências' },
+        { href: 'fechamento.html',  icon: '🔒', label: 'Fechamento'  },
+        { href: 'admin.html',       icon: '⚙️', label: 'Admin'       },
+        { href: 'changelog.html',   icon: '📜', label: 'Changelog'   },
+      ];
+    } else {
+      links = [
+        { href: 'dashboard.html', icon: '📊', label: 'Dashboard' },
+      ];
     }
-    links.push({ href: 'changelog.html', icon: '📜', label: 'Changelog' });
     const current = location.pathname.split('/').pop();
     return links.map(l => {
       const active = current === l.href.split('/').pop() ? ' active' : '';
@@ -347,12 +365,14 @@
       }).catch(() => {});
       loadFiscal(user);
       document.getElementById('btn-carregar').addEventListener('click', () => loadFiscal(user));
-    } else {
+    } else if (user.grupo === 'Administrador') {
       document.getElementById('view-admin').style.display = '';
       buildMesSelect('admin-sel-mes');
       buildAnoSelect('admin-sel-ano');
       loadAdmin();
       document.getElementById('btn-admin-carregar').addEventListener('click', loadAdmin);
+    } else {
+      document.getElementById('view-presentation').style.display = '';
     }
   });
 
