@@ -99,6 +99,7 @@
           <div class="btn-group mt-2">
             <button class="btn btn-warn" id="btn-recalc">🔄 Recalcular</button>
             <button class="btn btn-primary" id="btn-fechar">🔒 Fechar Competência e Gerar Relatório</button>
+            <button class="btn btn-danger" id="btn-fechar-todos">🔒 Fechar para Todos os Fiscais</button>
           </div>
         </div>
       </div>
@@ -361,6 +362,71 @@
     document.getElementById('rel-dt-geracao').textContent = new Date().toLocaleString('pt-BR');
   }
 
+  async function fecharTodosOsFiscais() {
+    const mes = Number(document.getElementById('sel-mes').value);
+    const ano = Number(document.getElementById('sel-ano').value);
+    const compLabel = `${MESES[mes-1]}/${ano}`;
+
+    if (!confirm(`Fechar a competência ${compLabel} para TODOS os fiscais?\n\nEsta ação irá fechar o mês de ${compLabel} para cada fiscal que ainda não tiver fechamento registrado. Fiscais já fechados serão ignorados.\n\nTem certeza?`)) return;
+
+    const btnTodos = document.getElementById('btn-fechar-todos');
+    btnTodos.disabled = true;
+    btnTodos.textContent = '⏳ Processando…';
+    document.getElementById('alert-area').innerHTML = '';
+
+    try {
+      const fiscais = await db_getTodosFiscais();
+      let fechados = 0;
+      let ignorados = 0;
+      const erros = [];
+
+      for (const fiscal of fiscais) {
+        const email = fiscal.email || fiscal.id;
+        try {
+          const jaFechado = await db_getFechamento(email, mes, ano);
+          if (jaFechado) { ignorados++; continue; }
+
+          const manuais = await db_getManuais(email, mes, ano);
+
+          const result = calcular([], manuais, 0);
+
+          const updates = manuais
+            .filter(m => m.status === 'aceito')
+            .map(m => db_updateManual(m.id, { status: 'fechado' }));
+          await Promise.all(updates);
+
+          await db_saveFechamento(email, mes, ano, {
+            fiscal_nome:      fiscal.nome || email,
+            pn_extra:         0,
+            obs:              '',
+            apuracao:         result.apuracao,
+            pp:               result.pp,
+            pn:               result.pn,
+            pv:               result.pv,
+            pv_lim:           result.pvLim,
+            fechado_por:      _user.email,
+            fechado_por_nome: _user.nome || _user.email,
+          });
+          fechados++;
+        } catch (err) {
+          erros.push(`${fiscal.nome || email}: ${err.message}`);
+        }
+      }
+
+      let msg = `Competência <strong>${compLabel}</strong> fechada para <strong>${fechados}</strong> fiscal(is).`;
+      if (ignorados) msg += ` ${ignorados} já estavam fechados (ignorados).`;
+      if (erros.length) msg += `<br>⚠️ Erros: ${erros.map(e => escHtml(e)).join('; ')}`;
+
+      document.getElementById('alert-area').innerHTML = alerta(erros.length ? 'warn' : 'ok', msg);
+      window.scrollTo(0, 0);
+    } catch (e) {
+      document.getElementById('alert-area').innerHTML = alerta('danger', 'Erro ao fechar todos: ' + e.message);
+    } finally {
+      btnTodos.disabled = false;
+      btnTodos.textContent = '🔒 Fechar para Todos os Fiscais';
+    }
+  }
+
   async function fecharCompetencia() {
     const fiscalEmail = document.getElementById('sel-fiscal').value;
     const mes  = Number(document.getElementById('sel-mes').value);
@@ -448,6 +514,7 @@
 
     if (user.grupo === 'Administrador') {
       document.getElementById('btn-fechar').addEventListener('click', fecharCompetencia);
+      document.getElementById('btn-fechar-todos').addEventListener('click', fecharTodosOsFiscais);
       document.getElementById('btn-recalc').addEventListener('click', () => {
         const pn = Number(document.getElementById('pn-extra').value || 0);
         const mes = Number(document.getElementById('sel-mes').value);
