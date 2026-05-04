@@ -92,6 +92,7 @@ service cloud.firestore {
     // Fechamentos: Administrativo/Administrador escreve; fiscal lê o seu próprio
     match /fechamentos/{docId} {
       allow read: if request.auth != null && (
+        resource == null ||
         resource.data.fiscal_email == request.auth.token.email ||
         get(/databases/$(database)/documents/usuarios/$(request.auth.token.email)).data.grupo == 'Administrador' ||
         get(/databases/$(database)/documents/usuarios/$(request.auth.token.email)).data.grupo == 'Administrativo'
