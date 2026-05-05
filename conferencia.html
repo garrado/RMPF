@@ -189,7 +189,6 @@
       ['dashboard.html','📊','Dashboard'],
       ['lancamento.html','✏️','Lançar Atividade'],
       ['meus-lancamentos.html','📋','Meus Lançamentos'],
-      ['conferencia.html','🔍','Conferência'],
       ['ocorrencias.html','📌','Ocorrências'],
     ] : [
       ['dashboard.html','📊','Dashboard'],
@@ -364,7 +363,9 @@
   requireAuth(async user => {
     _user  = user;
     _grupo = user.grupo;
-    if (user.grupo !== 'Fiscal' && user.grupo !== 'Administrador') {
+    if (user.grupo === 'Fiscal') {
+      window.location.href = 'meus-lancamentos.html'; return;
+    } else if (user.grupo !== 'Administrador') {
       window.location.href = 'dashboard.html'; return;
     }
     document.getElementById('loading-overlay').style.display = 'none';
