@@ -126,6 +126,27 @@
       </div>
     </div>
 
+    <!-- ── Token do GitHub (repositório VISA privado) ── -->
+    <div class="card" id="card-github-token">
+      <div class="card-title">🔑 Token do GitHub (Repositório VISA Privado)</div>
+      <p style="font-size:.88rem;color:var(--cinzaT);margin-bottom:14px">
+        Configure um Personal Access Token (PAT) com permissão de leitura no repositório privado
+        <code>garrado/VISA</code>. Este token é necessário para importar os CSVs de inspeções,
+        auditorias e a tabela CNAE. Crie um token Fine-Grained com permissão
+        <strong>Contents → Read-only</strong>.
+      </p>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+        <input type="password" class="form-control" id="input-github-token"
+               placeholder="github_pat_…" autocomplete="off" style="max-width:480px;flex:1">
+        <button class="btn btn-outline btn-sm" id="btn-toggle-token" type="button"
+                title="Mostrar / Ocultar token">👁</button>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-outline" id="btn-save-github-token" type="button">💾 Salvar Token</button>
+      </div>
+      <div id="github-token-log" style="margin-top:12px"></div>
+    </div>
+
     <!-- ── CNAE Complexidade — Seed ── -->
     <div class="card" id="card-seed-cnae">
       <div class="card-title">🧬 Tabela CNAE / Complexidade</div>
@@ -490,17 +511,53 @@
         '<tr class="empty-row"><td colspan="8">Erro ao carregar dados. Tente recarregar a página.</td></tr>';
     }
 
+    // ── Token do GitHub ───────────────────────────────────
+    (async () => {
+      const tokenLogEl = document.getElementById('github-token-log');
+      try {
+        const existing = await window.db_getGitHubToken();
+        if (existing) {
+          document.getElementById('input-github-token').value = existing;
+          tokenLogEl.innerHTML = alerta('ok', '✅ Token configurado.');
+        }
+      } catch(e) {
+        tokenLogEl.innerHTML = alerta('warn', '⚠️ Não foi possível carregar o token: ' + escHtml(e.message));
+      }
+    })();
+
+    document.getElementById('btn-toggle-token').addEventListener('click', () => {
+      const input = document.getElementById('input-github-token');
+      input.type = input.type === 'password' ? 'text' : 'password';
+    });
+
+    document.getElementById('btn-save-github-token').addEventListener('click', async () => {
+      const btn    = document.getElementById('btn-save-github-token');
+      const logEl  = document.getElementById('github-token-log');
+      const token  = document.getElementById('input-github-token').value.trim();
+      if (!token) {
+        logEl.innerHTML = alerta('warn', '⚠️ Informe o token antes de salvar.');
+        return;
+      }
+      btn.disabled = true;
+      logEl.innerHTML = alerta('info', '💾 Salvando token...');
+      try {
+        await window.db_setGitHubToken(token);
+        logEl.innerHTML = alerta('ok', '✅ Token salvo com sucesso.');
+      } catch(e) {
+        logEl.innerHTML = alerta('danger', '🚨 Erro ao salvar: ' + escHtml(e.message));
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
     // ── Seed CNAE ────────────────────────────────────────
-    const VISA_CNAE_URL = 'https://raw.githubusercontent.com/garrado/VISA/main/data/cnae.csv';
     document.getElementById('btn-seed-cnae').addEventListener('click', async () => {
       const btn   = document.getElementById('btn-seed-cnae');
       const logEl = document.getElementById('seed-cnae-log');
       btn.disabled = true;
       logEl.innerHTML = alerta('info', '🔄 Buscando <code>cnae.csv</code> do VISA...');
       try {
-        const resp = await fetch(VISA_CNAE_URL + '?v=' + Date.now());
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
-        const text = await resp.text();
+        const text = await window.fetchGitHubCSV('data/cnae.csv');
         const parsed = Papa.parse(text, {
           header: true,
           delimiter: ';',

@@ -1,7 +1,6 @@
 // js/visa-import.js
 // Módulo de importação de inspeções do VISA para o RMPF
 
-const VISA_CSV_URL        = 'https://raw.githubusercontent.com/garrado/VISA/main/data/inspecoes.csv';
 const VISA_IMPORT_INICIO_MES = 4;
 const VISA_IMPORT_INICIO_ANO = 2026;
 
@@ -94,9 +93,7 @@ async function importarInspecoesVISA({ fiscalEmail, fiscalNome, mes, ano, allFis
   try {
     onProgress('🔄 Buscando CSV de inspeções do VISA...', 'info');
 
-    const resp = await fetch(VISA_CSV_URL + '?v=' + Date.now());
-    if (!resp.ok) throw new Error('Não foi possível acessar o CSV do VISA: HTTP ' + resp.status);
-    const text = await resp.text();
+    const text = await window.fetchGitHubCSV('data/inspecoes.csv');
 
     const parsed = Papa.parse(text, {
       header: true,

@@ -482,6 +482,37 @@ async function getFechamentosMes(mes, ano) {
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
+// ── App Config / GitHub Token ─────────────────────────────
+
+async function db_getGitHubToken() {
+  const doc = await window.db.collection('app_config').doc('github_token').get();
+  return doc.exists ? (doc.data().token || null) : null;
+}
+
+async function db_setGitHubToken(token) {
+  await window.db.collection('app_config').doc('github_token').set({ token });
+}
+
+/**
+ * Fetches a file from the private garrado/VISA repository using the stored
+ * GitHub PAT and the GitHub Contents API with the raw media type.
+ * @param {string} filePath  Path inside the repo, e.g. 'data/inspecoes.csv'
+ * @returns {Promise<string>} Raw text content of the file
+ */
+async function fetchGitHubCSV(filePath) {
+  const token = await db_getGitHubToken();
+  if (!token) throw new Error('Token do GitHub não configurado. Acesse Admin → 🔑 Token do GitHub para configurar.');
+  const url = `https://api.github.com/repos/garrado/VISA/contents/${filePath}`;
+  const resp = await fetch(url, {
+    headers: {
+      'Authorization': 'Bearer ' + token,
+      'Accept': 'application/vnd.github.v3.raw',
+    },
+  });
+  if (!resp.ok) throw new Error('Não foi possível acessar o arquivo do repositório VISA: HTTP ' + resp.status);
+  return resp.text();
+}
+
 // ── Exports ──────────────────────────────────────────────
 
 window.db_getFechamento         = getFechamento;
@@ -519,3 +550,6 @@ window.db_getSIMManual          = getSIMManual;
 window.db_upsertSIMManual       = upsertSIMManual;
 window.db_acquireSimImportLock  = acquireSimImportLock;
 window.db_releaseSimImportLock  = releaseSimImportLock;
+window.db_getGitHubToken        = db_getGitHubToken;
+window.db_setGitHubToken        = db_setGitHubToken;
+window.fetchGitHubCSV           = fetchGitHubCSV;
