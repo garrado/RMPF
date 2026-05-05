@@ -365,8 +365,7 @@
     _grupo = user.grupo;
     if (user.grupo === 'Fiscal') {
       window.location.href = 'meus-lancamentos.html'; return;
-    }
-    if (user.grupo !== 'Administrador') {
+    } else if (user.grupo !== 'Administrador') {
       window.location.href = 'dashboard.html'; return;
     }
     document.getElementById('loading-overlay').style.display = 'none';
