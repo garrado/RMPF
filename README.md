@@ -29,3 +29,32 @@ O workflow `.github/workflows/mirror.yml` sincroniza automaticamente todo push e
 4. Aguarde — deve ficar verde ✅
 
 > ⚠️ Certifique-se que o repositório `visaanapolis/RMPF` existe antes de rodar o workflow.
+
+---
+
+## 🔧 Configuração de CORS do Firebase Storage
+
+Para que o upload de anexos (PDFs) funcione a partir do GitHub Pages (`https://visaanapolis.github.io`), é necessário aplicar a configuração de CORS ao bucket do Firebase Storage **uma única vez**.
+
+### Pré-requisitos
+
+- [Google Cloud SDK](https://cloud.google.com/sdk/docs/install) instalado (`gcloud` / `gsutil`)
+- Conta com acesso ao projeto Firebase `visam-3a30b`
+
+### Como aplicar
+
+```bash
+# 1. Autentique-se no Google Cloud
+gcloud auth login
+
+# 2. Aplique o arquivo cors.json ao bucket
+gsutil cors set cors.json gs://visam-3a30b.appspot.com
+```
+
+### Verificar se está aplicado
+
+```bash
+gsutil cors get gs://visam-3a30b.appspot.com
+```
+
+> ⚠️ Sem essa configuração, o Firebase Storage bloqueará os uploads com erro de CORS (ERR_FAILED), e os anexos não serão salvos.
