@@ -38,7 +38,7 @@ Para que o upload de anexos (PDFs) funcione a partir do GitHub Pages (`https://v
 
 ### Pré-requisitos
 
-- [Google Cloud SDK](https://cloud.google.com/sdk/docs/install) instalado (`gcloud` / `gsutil`)
+- [Google Cloud SDK](https://cloud.google.com/sdk/docs/install) instalado (`gcloud`)
 - Conta com acesso ao projeto Firebase `visam-3a30b`
 
 ### Como aplicar
@@ -48,13 +48,13 @@ Para que o upload de anexos (PDFs) funcione a partir do GitHub Pages (`https://v
 gcloud auth login
 
 # 2. Aplique o arquivo cors.json ao bucket
-gsutil cors set cors.json gs://visam-3a30b.appspot.com
+gcloud storage buckets update gs://visam-3a30b.appspot.com --cors-file=cors.json
 ```
 
 ### Verificar se está aplicado
 
 ```bash
-gsutil cors get gs://visam-3a30b.appspot.com
+gcloud storage buckets describe gs://visam-3a30b.appspot.com --format="json(cors_config)"
 ```
 
 > ⚠️ Sem essa configuração, o Firebase Storage bloqueará os uploads com erro de CORS (ERR_FAILED), e os anexos não serão salvos.
