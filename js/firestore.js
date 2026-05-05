@@ -513,6 +513,32 @@ async function fetchGitHubCSV(filePath) {
   return resp.text();
 }
 
+// ── Armazenamento — Anexos por competência ────────────────
+
+async function getAnexosPorMes() {
+  // Busca TODOS os manuais — filtra client-side os que têm anexo_bytes
+  // (Firestore não permite "where field != null" de forma portável na versão compat)
+  const snap = await window.db.collection('manuais').get();
+  const porMes = {};
+  let totalBytes = 0;
+  snap.docs.forEach(d => {
+    const data = d.data();
+    if (!data.anexo_bytes) return;
+    const key = `${data.mes}-${data.ano}`;
+    if (!porMes[key]) porMes[key] = { mes: data.mes, ano: data.ano, count: 0, bytes: 0 };
+    porMes[key].count++;
+    porMes[key].bytes += data.anexo_bytes;
+    totalBytes += data.anexo_bytes;
+  });
+  const lista = Object.values(porMes).sort((a, b) => a.ano - b.ano || a.mes - b.mes);
+  return { porMes: lista, totalBytes };
+}
+
+async function getFechamentosTodos() {
+  const snap = await window.db.collection('fechamentos').get();
+  return snap.docs.map(d => d.data());
+}
+
 // ── Exports ──────────────────────────────────────────────
 
 window.db_getFechamento         = getFechamento;
@@ -553,3 +579,5 @@ window.db_releaseSimImportLock  = releaseSimImportLock;
 window.db_getGitHubToken        = db_getGitHubToken;
 window.db_setGitHubToken        = db_setGitHubToken;
 window.fetchGitHubCSV           = fetchGitHubCSV;
+window.db_getAnexosPorMes       = getAnexosPorMes;
+window.db_getFechamentosTodos   = getFechamentosTodos;

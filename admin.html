@@ -13,6 +13,7 @@
   <link rel="manifest"                     href="manifest.webmanifest">
   <meta name="theme-color" content="#1565c0">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
   <style>
     /* Pills   */
     .pill-group { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -59,6 +60,35 @@
 
     /* Edit modal wider */
     #modal-edit .modal { max-width: 460px; }
+
+    /* Storage monitoring card */
+    .storage-uso-bar-wrap {
+      background: var(--cinzaL); border-radius: 6px; height: 14px; overflow: hidden; margin: 8px 0 4px;
+    }
+    .storage-uso-bar-fill {
+      height: 100%; border-radius: 6px; transition: width .4s ease;
+    }
+    .storage-chart {
+      display: flex; align-items: flex-end; gap: 8px;
+      overflow-x: auto; padding-bottom: 4px; min-height: 120px;
+    }
+    .storage-bar-col {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: flex-end; flex: 0 0 auto; min-width: 40px;
+    }
+    .storage-bar {
+      width: 36px; background: var(--azul); border-radius: 4px 4px 0 0;
+      min-height: 4px; transition: height .3s ease;
+    }
+    .storage-bar.warn  { background: #f59e0b; }
+    .storage-bar.danger { background: var(--verm); }
+    .storage-bar-valor {
+      font-size: .7rem; color: var(--cinzaT); margin-bottom: 3px; white-space: nowrap;
+    }
+    .storage-bar-label {
+      font-size: .72rem; color: var(--cinzaT); margin-top: 4px;
+      text-align: center; white-space: nowrap;
+    }
   </style>
 </head>
 <body>
@@ -161,6 +191,47 @@
         </button>
       </div>
       <div id="seed-cnae-log" style="margin-top:12px"></div>
+    </div>
+
+    <!-- ── Armazenamento de Anexos (Firebase Storage) ── -->
+    <div class="card" id="card-storage">
+      <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <span>🗂️ Armazenamento de Anexos (Firebase Storage)</span>
+        <button class="btn btn-outline btn-sm" id="btn-refresh-storage">🔄 Atualizar</button>
+      </div>
+
+      <!-- Barra de uso total -->
+      <div id="storage-overview" style="margin-bottom:18px">
+        <div class="spinner"></div>
+      </div>
+
+      <!-- Gráfico de barras por competência -->
+      <div id="storage-chart-section" style="display:none">
+        <div style="font-size:.85rem;font-weight:600;color:var(--cinzaT);margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em">
+          Uso por competência
+        </div>
+        <div class="storage-chart" id="storage-bar-chart"></div>
+      </div>
+
+      <!-- Tabela por mes/ano -->
+      <div id="storage-table-section" style="display:none;margin-top:20px">
+        <div class="table-wrap">
+          <table class="rmpf-table">
+            <thead>
+              <tr>
+                <th>Competência</th>
+                <th>Anexos</th>
+                <th>Tamanho</th>
+                <th>Status</th>
+                <th class="nao-imprimir">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="storage-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="storage-log" style="margin-top:12px"></div>
     </div>
 
     <!-- ── Tabela de usuários ── -->
@@ -573,6 +644,179 @@
         btn.disabled = false;
       }
     });
+
+    // ── Storage Monitoring ───────────────────────────────
+
+    function fmtBytes(bytes) {
+      if (!bytes || bytes === 0) return '0 KB';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+      return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
+    }
+
+    async function carregarStorageStats() {
+      const overviewEl = document.getElementById('storage-overview');
+      const chartSection = document.getElementById('storage-chart-section');
+      const tableSection = document.getElementById('storage-table-section');
+      const logEl = document.getElementById('storage-log');
+
+      overviewEl.innerHTML = '<div class="spinner"></div>';
+      chartSection.style.display = 'none';
+      tableSection.style.display = 'none';
+      logEl.innerHTML = '';
+
+      try {
+        const [{ porMes, totalBytes }, fechamentos] = await Promise.all([
+          window.db_getAnexosPorMes(),
+          window.db_getFechamentosTodos(),
+        ]);
+
+        // Build set of closed competências: "mes-ano"
+        const fechados = new Set();
+        fechamentos.forEach(f => {
+          if (f.mes && f.ano) fechados.add(`${f.mes}-${f.ano}`);
+        });
+
+        // Render uso total
+        const LIMITE_BYTES = 5 * 1024 * 1024 * 1024; // 5 GB
+        const pct = totalBytes / LIMITE_BYTES * 100;
+        const corBarra = pct < 50 ? 'var(--verde)' : pct < 80 ? '#f59e0b' : 'var(--verm)';
+        const alertaCritico = pct >= 80
+          ? `<div style="margin-top:8px;font-size:.84rem;color:var(--verm);font-weight:600">⚠️ Espaço crítico! Apague PDFs de meses antigos.</div>`
+          : '';
+        overviewEl.innerHTML =
+          `<div style="font-size:.9rem;color:var(--cinzaT);margin-bottom:4px">
+            <strong>${fmtBytes(totalBytes)}</strong> / 5 GB
+            <span style="color:${corBarra};font-weight:600;margin-left:8px">(${pct.toFixed(1)}%)</span>
+          </div>
+          <div class="storage-uso-bar-wrap">
+            <div class="storage-uso-bar-fill" style="width:${Math.min(pct,100).toFixed(2)}%;background:${corBarra}"></div>
+          </div>${alertaCritico}`;
+
+        if (porMes.length === 0) {
+          overviewEl.insertAdjacentHTML('beforeend',
+            '<div style="margin-top:10px;color:var(--cinzaT);font-size:.88rem">Nenhum anexo armazenado ainda.</div>');
+          return;
+        }
+
+        // Gráfico de barras — últimas 12 competências
+        const visiveis = porMes.slice(-12);
+        const maxBytes = Math.max(...visiveis.map(v => v.bytes), 1);
+        const BAR_MAX_HEIGHT = 100; // px
+        const chartEl = document.getElementById('storage-bar-chart');
+        chartEl.innerHTML = visiveis.map(v => {
+          const altura = Math.max(Math.round(v.bytes / maxBytes * BAR_MAX_HEIGHT), 4);
+          const barPct = v.bytes / LIMITE_BYTES * 100;
+          const cls = barPct > 60 ? 'danger' : barPct > 30 ? 'warn' : '';
+          const nomeMes = (window.MESES || [])[v.mes - 1] || String(v.mes).padStart(2,'0');
+          const label = `${nomeMes.slice(0,3)}/${String(v.ano).slice(-2)}`;
+          return `<div class="storage-bar-col">
+            <div class="storage-bar-valor">${fmtBytes(v.bytes)}</div>
+            <div class="storage-bar ${cls}" style="height:${altura}px"></div>
+            <div class="storage-bar-label">${escHtml(label)}</div>
+          </div>`;
+        }).join('');
+        chartSection.style.display = '';
+
+        // Tabela
+        renderStorageTable(porMes, fechados);
+        tableSection.style.display = '';
+
+      } catch(e) {
+        overviewEl.innerHTML = alerta('danger', '🚨 Erro ao carregar dados de armazenamento: ' + escHtml(e.message));
+      }
+    }
+
+    function renderStorageTable(porMes, fechados) {
+      const tbody = document.getElementById('storage-tbody');
+      tbody.innerHTML = porMes.map(v => {
+        const key = `${v.mes}-${v.ano}`;
+        const isFechado = fechados.has(key);
+        const nomeMes = (window.MESES || [])[v.mes - 1] || String(v.mes).padStart(2,'0');
+        const badge = isFechado
+          ? '<span class="badge" style="background:var(--vermP);color:var(--verm)">Fechado</span>'
+          : '<span class="badge" style="background:var(--verdeP);color:var(--verde)">Aberto</span>';
+        const btn = isFechado
+          ? `<button class="btn btn-outline btn-sm" style="color:var(--verm);border-color:var(--verm)"
+               onclick="confirmarApagarAnexos(${v.mes}, ${v.ano}, '${escHtml(nomeMes)}')">🗑️ Apagar PDFs</button>`
+          : `<button class="btn btn-outline btn-sm" disabled
+               title="Só é possível apagar PDFs de competências fechadas">🗑️ Apagar PDFs</button>`;
+        return `<tr>
+          <td data-label="Competência">${escHtml(nomeMes)}/${v.ano}</td>
+          <td data-label="Anexos">${v.count}</td>
+          <td data-label="Tamanho">${fmtBytes(v.bytes)}</td>
+          <td data-label="Status">${badge}</td>
+          <td data-label="Ações" class="nao-imprimir">${btn}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    window.confirmarApagarAnexos = function(mes, ano, nomeMes) {
+      const ok = confirm(
+        `Deseja apagar TODOS os PDFs de ${nomeMes}/${ano}?\nEsta operação é irreversível.`
+      );
+      if (ok) apagarAnexosMes(mes, ano);
+    };
+
+    async function apagarAnexosMes(mes, ano) {
+      const logEl = document.getElementById('storage-log');
+      logEl.innerHTML = alerta('info', '🗑️ Apagando PDFs…');
+
+      // Disable the button for this month while deleting
+      const btns = document.querySelectorAll('#storage-tbody button');
+      btns.forEach(b => { b.disabled = true; });
+
+      try {
+        const snap = await window.db.collection('manuais')
+          .where('mes', '==', Number(mes))
+          .where('ano', '==', Number(ano))
+          .get();
+        const comAnexo = snap.docs.filter(d => d.data().anexo_path && d.data().anexo_bytes);
+
+        let apagados = 0;
+        let bytesLiberados = 0;
+
+        for (const doc of comAnexo) {
+          const data = doc.data();
+          try {
+            await firebase.storage().ref(data.anexo_path).delete();
+            apagados++;
+            bytesLiberados += data.anexo_bytes || 0;
+          } catch(err) {
+            // Ignora 404 (arquivo já inexistente no Storage)
+            if (err.code !== 'storage/object-not-found') {
+              console.warn('Erro ao apagar arquivo do Storage:', err);
+            }
+          }
+        }
+
+        // Batch Firestore update — limpa campos de anexo
+        const serverTimestamp = firebase.firestore.FieldValue.serverTimestamp;
+        const BATCH_MAX = 500;
+        for (let i = 0; i < comAnexo.length; i += BATCH_MAX) {
+          const batch = window.db.batch();
+          comAnexo.slice(i, i + BATCH_MAX).forEach(doc => {
+            batch.update(doc.ref, {
+              anexo_url: null,
+              anexo_nome: null,
+              anexo_path: null,
+              anexo_bytes: null,
+              updated_at: serverTimestamp(),
+            });
+          });
+          await batch.commit();
+        }
+
+        logEl.innerHTML = alerta('ok',
+          `✅ ${apagados} PDF(s) apagado(s). Espaço liberado: ${fmtBytes(bytesLiberados)}.`);
+        await carregarStorageStats();
+      } catch(e) {
+        logEl.innerHTML = alerta('danger', '🚨 Erro ao apagar PDFs: ' + escHtml(e.message));
+      }
+    }
+
+    document.getElementById('btn-refresh-storage').addEventListener('click', carregarStorageStats);
+    carregarStorageStats();
   });
 </script>
 </body>
