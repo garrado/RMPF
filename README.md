@@ -48,13 +48,13 @@ Para que o upload de anexos (PDFs) funcione a partir do GitHub Pages (`https://v
 gcloud auth login
 
 # 2. Aplique o arquivo cors.json ao bucket
-gcloud storage buckets update gs://visam-3a30b.appspot.com --cors-file=cors.json
+gcloud storage buckets update gs://visam-3a30b.firebasestorage.app --cors-file=cors.json
 ```
 
 ### Verificar se está aplicado
 
 ```bash
-gcloud storage buckets describe gs://visam-3a30b.appspot.com --format="json(cors_config)"
+gcloud storage buckets describe gs://visam-3a30b.firebasestorage.app --format="json(cors_config)"
 ```
 
 > ⚠️ Sem essa configuração, o Firebase Storage bloqueará os uploads com erro de CORS (ERR_FAILED), e os anexos não serão salvos.
