@@ -9,7 +9,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyDo473puJesZ9rr3IBoX5AWczCIMuKBTrg",
   authDomain: "visam-3a30b.firebaseapp.com",
   projectId: "visam-3a30b",
-  storageBucket: "visam-3a30b.appspot.com",
+  storageBucket: "visam-3a30b.firebasestorage.app",
   messagingSenderId: "308899251430",
   appId: "1:308899251430:web:0053cdbd0bed7f0de76727"
 };
