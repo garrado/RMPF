@@ -1,7 +1,6 @@
 // js/sim-import.js
 // Módulo de importação de auditorias do SIM para o RMPF
 
-const SIM_CSV_URL           = 'https://raw.githubusercontent.com/garrado/VISA/main/data/auditoria.csv';
 const SIM_IMPORT_INICIO_MES = 4;
 const SIM_IMPORT_INICIO_ANO = 2026;
 
@@ -57,9 +56,7 @@ async function importarAuditoriasSIM({ fiscalEmail, fiscalNome, mes, ano, allFis
   try {
     onProgress('🔄 Buscando CSV de auditorias do SIM...', 'info');
 
-    const resp = await fetch(SIM_CSV_URL + '?v=' + Date.now());
-    if (!resp.ok) throw new Error('Não foi possível acessar o CSV do SIM: HTTP ' + resp.status);
-    const text = await resp.text();
+    const text = await window.fetchGitHubCSV('data/auditoria.csv');
 
     const parsed = Papa.parse(text, {
       header: true,
