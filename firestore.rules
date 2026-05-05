@@ -41,7 +41,7 @@ service cloud.firestore {
             .hasOnly(['anexo_url', 'anexo_nome', 'anexo_path', 'anexo_bytes', 'updated_at'])) ||
         (resource.data.fiscal_email == request.auth.token.email &&
           (resource.data.status == 'rascunho' ||
-           (resource.data.origem == 'visa_csv' && resource.data.status != 'aceito' && resource.data.status != 'fechado'))) ||
+           ((resource.data.origem == 'visa_csv' || resource.data.origem == 'sim_csv') && resource.data.status != 'aceito' && resource.data.status != 'fechado'))) ||
         get(/databases/$(database)/documents/usuarios/$(request.auth.token.email)).data.grupo == 'Administrador' ||
         get(/databases/$(database)/documents/usuarios/$(request.auth.token.email)).data.grupo == 'Administrativo'
       );

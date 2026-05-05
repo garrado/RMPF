@@ -248,7 +248,6 @@ async function upsertVISAManual(visaControle, fiscalEmail, data, existingId, isN
   if (isNew) {
     await ref.set({
       ...data,
-      origem:      'visa',
       fiscal_email: fiscalEmail,
       created_at: firebase.firestore.FieldValue.serverTimestamp(),
       updated_at: firebase.firestore.FieldValue.serverTimestamp(),
@@ -319,7 +318,6 @@ async function upsertSIMManual(osNum, fiscalEmail, data, existingId, isNew) {
   if (isNew) {
     await ref.set({
       ...data,
-      origem:      'sim',
       fiscal_email: fiscalEmail,
       created_at: firebase.firestore.FieldValue.serverTimestamp(),
       updated_at: firebase.firestore.FieldValue.serverTimestamp(),
