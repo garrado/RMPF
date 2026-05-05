@@ -93,11 +93,12 @@
               <th class="td-num">Pts Req.</th>
               <th class="td-num">Pts Hom.</th>
               <th>Status</th>
+              <th class="td-center nao-imprimir">Anexo</th>
               <th class="td-center nao-imprimir">Ações</th>
             </tr>
           </thead>
           <tbody id="tbody-lista">
-            <tr class="empty-row"><td colspan="8">Selecione uma competência e clique em Carregar</td></tr>
+            <tr class="empty-row"><td colspan="9">Selecione uma competência e clique em Carregar</td></tr>
           </tbody>
         </table>
       </div>
@@ -189,9 +190,42 @@
   </footer>
 </div>
 
+<!-- Modal de Anexo PDF -->
+<div id="modal-anexo" class="modal-backdrop" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <span>📎 Anexar PDF</span>
+      <button class="modal-close" id="anexo-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="anexo-doc-id">
+      <div class="form-group">
+        <label class="form-label required" for="anexo-file">Arquivo PDF (máx. 10 MB)</label>
+        <input type="file" class="form-control" id="anexo-file" accept=".pdf,application/pdf">
+        <div class="form-hint">Apenas arquivos PDF são aceitos.</div>
+      </div>
+      <div id="anexo-progress-wrap" class="progress-wrap" style="display:none">
+        <div class="progress-header">
+          <span class="progress-label" id="anexo-progress-label">Enviando…</span>
+          <span class="progress-pct" id="anexo-progress-pct">0%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="anexo-progress-fill"></div>
+        </div>
+      </div>
+      <div id="anexo-alert"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" id="anexo-close2">Cancelar</button>
+      <button class="btn btn-primary" id="btn-confirmar-anexo">📤 Enviar PDF</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 <script src="js/firebase-config.js"></script>
 <script src="js/version.js"></script>
 <script src="js/utils.js"></script>
@@ -251,7 +285,7 @@
   function renderTabela() {
     const tbody = document.getElementById('tbody-lista');
     if (!_manuais.length) {
-      tbody.innerHTML = '<tr class="empty-row"><td colspan="8">Nenhum lançamento nesta competência</td></tr>';
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="9">Nenhum lançamento nesta competência</td></tr>';
       return;
     }
     tbody.innerHTML = _manuais.map(m => {
@@ -283,6 +317,23 @@
                  ${m.motivo_recusa ? `<span class="form-hint">${escHtml(m.motivo_recusa)}</span>` : ''}
                  <button class="btn btn-outline btn-sm" onclick="corrigirManual('${m.id}')">✏️ Corrigir e Reenviar</button>`;
       }
+
+      // ── Célula de Anexo ──
+      let anexoCell = '';
+      const podeAnexar = !_fechamento && m.status !== 'fechado' && m.origem !== 'visa_csv' && m.origem !== 'sim_csv';
+      if (m.anexo_url) {
+        const nomeSeguro = escHtml(m.anexo_nome || 'arquivo.pdf');
+        anexoCell = `<div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+          <a href="${escHtml(m.anexo_url)}" target="_blank" rel="noopener"
+             title="${nomeSeguro}" class="btn btn-outline btn-sm" style="gap:4px">📎 ${nomeSeguro}</a>
+          ${podeAnexar ? `<button class="btn btn-danger btn-sm" onclick="removerAnexo('${m.id}','${escHtml(m.anexo_path || '')}')" title="Remover PDF">🗑️ Remover</button>` : ''}
+        </div>`;
+      } else if (podeAnexar) {
+        anexoCell = `<button class="btn btn-default btn-sm" onclick="abrirUploadAnexo('${m.id}')" title="Anexar PDF">📎 Anexar</button>`;
+      } else {
+        anexoCell = '—';
+      }
+
       return `<tr>
         <td data-label="Controle"><span class="ctrl-num">${escHtml(m.controle || '—')}</span></td>
         <td data-label="Data">${fmtData(m.data)}</td>
@@ -291,6 +342,7 @@
         <td data-label="Pts Req." class="td-num">${m.pontos ?? '—'}</td>
         <td data-label="Pts Hom." class="td-num">${m.pontos_homologado != null ? m.pontos_homologado : '—'}</td>
         <td data-label="Status">${badge(m.status)}</td>
+        <td data-label="Anexo" class="td-center nao-imprimir">${anexoCell}</td>
         <td data-label="Ações" class="td-center nao-imprimir" style="white-space:nowrap">${acoes}</td>
       </tr>`;
     }).join('');
@@ -407,6 +459,69 @@
   window.excluirManual = excluirManual;
   window.editarManual  = editarManual;
   window.corrigirManual = corrigirManual;
+
+  // ── Anexo PDF ────────────────────────────────────────────
+
+  function abrirUploadAnexo(docId) {
+    document.getElementById('anexo-doc-id').value = docId;
+    document.getElementById('anexo-file').value   = '';
+    document.getElementById('anexo-alert').innerHTML = '';
+    document.getElementById('anexo-progress-wrap').style.display = 'none';
+    document.getElementById('anexo-progress-fill').style.width   = '0%';
+    document.getElementById('btn-confirmar-anexo').disabled = false;
+    document.getElementById('modal-anexo').style.display = 'flex';
+  }
+
+  async function removerAnexo(docId, anexoPath) {
+    if (!confirm('Remover o PDF anexado a este lançamento?')) return;
+    try {
+      await db_removeAnexoManual(docId, anexoPath);
+      showAlert('ok', 'Anexo removido com sucesso.');
+      loadManuais();
+    } catch(e) {
+      showAlert('danger', 'Erro ao remover anexo: ' + escHtml(e.message));
+    }
+  }
+
+  document.getElementById('btn-confirmar-anexo').addEventListener('click', async () => {
+    const docId = document.getElementById('anexo-doc-id').value;
+    const file  = document.getElementById('anexo-file').files[0];
+    if (!file) {
+      document.getElementById('anexo-alert').innerHTML = alerta('warn', 'Selecione um arquivo PDF.');
+      return;
+    }
+    const progressWrap  = document.getElementById('anexo-progress-wrap');
+    const progressFill  = document.getElementById('anexo-progress-fill');
+    const progressPct   = document.getElementById('anexo-progress-pct');
+    const progressLabel = document.getElementById('anexo-progress-label');
+    const btnConfirmar  = document.getElementById('btn-confirmar-anexo');
+    btnConfirmar.disabled = true;
+    progressWrap.style.display = '';
+    document.getElementById('anexo-alert').innerHTML = '';
+    try {
+      await db_uploadAnexoManual(docId, file, pct => {
+        progressFill.style.width  = pct + '%';
+        progressPct.textContent   = pct + '%';
+        progressLabel.textContent = `Enviando PDF… ${pct}%`;
+      });
+      document.getElementById('modal-anexo').style.display = 'none';
+      showAlert('ok', `PDF <strong>${escHtml(file.name)}</strong> anexado com sucesso.`);
+      loadManuais();
+    } catch(e) {
+      progressWrap.style.display = 'none';
+      document.getElementById('anexo-alert').innerHTML = alerta('danger', 'Erro: ' + escHtml(e.message));
+      btnConfirmar.disabled = false;
+    }
+  });
+
+  ['anexo-close','anexo-close2'].forEach(id => {
+    document.getElementById(id).addEventListener('click', () => {
+      document.getElementById('modal-anexo').style.display = 'none';
+    });
+  });
+
+  window.abrirUploadAnexo = abrirUploadAnexo;
+  window.removerAnexo     = removerAnexo;
 
   requireAuth(async user => {
     if (user.grupo !== 'Fiscal') { window.location.href = 'dashboard.html'; return; }

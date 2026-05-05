@@ -157,6 +157,22 @@
             placeholder="Informações adicionais relevantes para a supervisão…"></textarea>
         </div>
 
+        <div class="form-group" id="grupo-anexo-pdf">
+          <label class="form-label" for="f-pdf">Anexo PDF (opcional, máx. 10 MB)</label>
+          <input type="file" class="form-control" id="f-pdf" accept=".pdf,application/pdf">
+          <div class="form-hint">Apenas arquivos PDF. O upload ocorre após salvar o lançamento.</div>
+        </div>
+
+        <div id="upload-pdf-progress" class="progress-wrap" style="display:none">
+          <div class="progress-header">
+            <span class="progress-label" id="upload-pdf-label">Enviando PDF…</span>
+            <span class="progress-pct" id="upload-pdf-pct">0%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="upload-pdf-fill"></div>
+          </div>
+        </div>
+
         <div class="btn-group mt-3">
           <button type="button" class="btn btn-default" id="btn-rascunho">💾 Salvar Rascunho</button>
           <button type="button" class="btn btn-primary" id="btn-enviar">📤 Enviar para Supervisão</button>
@@ -172,6 +188,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 <script src="js/firebase-config.js"></script>
 <script src="js/version.js"></script>
 <script src="js/utils.js"></script>
@@ -326,12 +343,38 @@
     const fechamento = await db_getFechamento(user.email, mes, ano);
     if (fechamento) {
       showAlert('warn', `A competência <strong>${MESES[mes-1]}/${ano}</strong> já foi fechada e não aceita novos lançamentos.`);
+      btns.forEach(b => { b.disabled = false; });
       return;
     }
 
     try {
-      await db_createManual(doc);
-      showAlert('ok', `Atividade <strong>${controle}</strong> salva com status <em>${status}</em>! <a href="meus-lancamentos.html">Ver meus lançamentos</a>`);
+      const docId = await db_createManual(doc);
+
+      // ── Upload do PDF (opcional) ──────────────────────
+      const pdfInput = document.getElementById('f-pdf');
+      const pdfFile  = pdfInput && pdfInput.files[0];
+      if (pdfFile) {
+        const progressWrap  = document.getElementById('upload-pdf-progress');
+        const progressFill  = document.getElementById('upload-pdf-fill');
+        const progressPct   = document.getElementById('upload-pdf-pct');
+        const progressLabel = document.getElementById('upload-pdf-label');
+        progressWrap.style.display = '';
+        try {
+          await db_uploadAnexoManual(docId, pdfFile, pct => {
+            progressFill.style.width = pct + '%';
+            progressPct.textContent  = pct + '%';
+            progressLabel.textContent = `Enviando PDF… ${pct}%`;
+          });
+          progressWrap.style.display = 'none';
+          showAlert('ok', `Atividade <strong>${controle}</strong> salva com status <em>${status}</em> e PDF anexado! <a href="meus-lancamentos.html">Ver meus lançamentos</a>`);
+        } catch (uploadErr) {
+          progressWrap.style.display = 'none';
+          showAlert('warn', `Atividade salva, mas houve um erro ao enviar o PDF: ${escHtml(uploadErr.message)}`);
+        }
+      } else {
+        showAlert('ok', `Atividade <strong>${controle}</strong> salva com status <em>${status}</em>! <a href="meus-lancamentos.html">Ver meus lançamentos</a>`);
+      }
+
       document.getElementById('form-lancamento').reset();
       document.getElementById('item-group').style.display = 'none';
     } catch (e) {
@@ -372,8 +415,10 @@
         document.getElementById('comp-fechado-alert').innerHTML =
           alerta('warn', `A competência <strong>${MESES[mes-1]}/${ano}</strong> já foi fechada e não aceita novos lançamentos.`);
         document.getElementById('comp-fechado-alert').style.display = '';
+        document.getElementById('grupo-anexo-pdf').style.display = 'none';
       } else {
         document.getElementById('comp-fechado-alert').style.display = 'none';
+        document.getElementById('grupo-anexo-pdf').style.display = '';
         btnRascunho.disabled = false;
         btnEnviar.disabled   = false;
         btnVisa.disabled = !visaMesAberto(mes, ano);
