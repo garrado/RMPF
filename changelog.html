@@ -44,6 +44,19 @@
 
         <li class="changelog-item">
           <div class="changelog-version">
+            <span class="badge-version">v1.4.0</span>
+            <span class="badge-date">05/05/2026</span>
+          </div>
+          <div class="changelog-title">Suporte a repositório VISA privado na importação de CSV; token GitHub configurável pelo Admin</div>
+          <ul class="changelog-changes">
+            <li><strong>Token GitHub configurável</strong> — novo card <em>🔑 Token do GitHub</em> no painel Admin (<code>admin.html</code>) permite que o administrador configure e salve um Personal Access Token (PAT) com permissão <em>Contents → Read-only</em> no repositório privado <code>garrado/VISA</code>. O token é armazenado no Firestore (<code>app_config/github_token</code>) com regra de escrita restrita ao grupo <em>Administrador</em>. (<a href="https://github.com/garrado/RMPF/pull/71" target="_blank">#71</a>)</li>
+            <li><strong>Importação de CSV via API autenticada</strong> — <code>js/visa-import.js</code> e <code>js/sim-import.js</code> substituem o acesso direto à URL pública do GitHub pela nova função <code>fetchGitHubCSV</code> (<code>js/firestore.js</code>), que usa o PAT armazenado para acessar repositórios privados via GitHub Contents API. Resolve o erro <em>"window.db_setGitHubToken is not a function"</em> exibido ao salvar o token. (<a href="https://github.com/garrado/RMPF/pull/71" target="_blank">#71</a>)</li>
+            <li><strong>Seed de CNAE autenticado</strong> — botão <em>🔄 Sincronizar CNAE com Firestore</em> em <code>admin.html</code> usa a mesma <code>fetchGitHubCSV</code> para importar <code>data/cnae.csv</code> do repositório VISA privado. (<a href="https://github.com/garrado/RMPF/pull/71" target="_blank">#71</a>)</li>
+          </ul>
+        </li>
+
+        <li class="changelog-item">
+          <div class="changelog-version">
             <span class="badge-version">v1.3.3</span>
             <span class="badge-date">03/05/2026</span>
           </div>
