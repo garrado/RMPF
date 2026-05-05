@@ -197,7 +197,14 @@
     <div class="card" id="card-storage">
       <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
         <span>🗂️ Armazenamento de Anexos (Firebase Storage)</span>
-        <button class="btn btn-outline btn-sm" id="btn-refresh-storage">🔄 Atualizar</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" id="btn-refresh-storage">🔄 Atualizar</button>
+          <button class="btn btn-outline btn-sm" id="btn-excluir-periodo-storage"
+                  style="color:var(--verm);border-color:var(--verm)"
+                  title="Excluir permanentemente todos os PDFs de um intervalo de meses para liberar espaço no Firebase Storage. Realize backup antes!">
+            🗑️ Excluir por Período
+          </button>
+        </div>
       </div>
 
       <!-- Barra de uso total -->
@@ -322,6 +329,60 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-default" id="modal-edit-cancel">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: excluir anexos por período ── -->
+<div id="modal-periodo-storage" class="modal-backdrop" style="display:none">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header">
+      <span>🗑️ Excluir Anexos por Período</span>
+      <button class="modal-close" id="modal-periodo-close">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Aviso de backup -->
+      <div style="background:#fff3cd;border:1px solid #f59e0b;border-radius:8px;padding:12px 14px;margin-bottom:16px">
+        <strong style="color:#7c5800">⚠️ ATENÇÃO — Realize um backup antes de prosseguir!</strong>
+        <p style="margin:6px 0 0;font-size:.85rem;color:#7c5800">
+          Esta operação exclui <strong>permanentemente</strong> todos os arquivos PDF do Firebase Storage
+          e limpa os metadados de anexo no Firestore para o período escolhido.
+          <strong>A ação é irreversível e não pode ser desfeita.</strong>
+          Certifique-se de ter baixado ou exportado todos os arquivos importantes antes de continuar.
+        </p>
+      </div>
+
+      <!-- Seleção de período -->
+      <div class="form-row cols-2" style="margin-bottom:0">
+        <div class="form-group">
+          <label class="form-label" for="periodo-de">De (mês/ano)</label>
+          <input type="month" class="form-control" id="periodo-de"
+                 title="Mês e ano de início do período a ser excluído (inclusive). Exemplo: Janeiro/2023.">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="periodo-ate">Até (mês/ano)</label>
+          <input type="month" class="form-control" id="periodo-ate"
+                 title="Mês e ano de fim do período a ser excluído (inclusive). Exemplo: Dezembro/2023.">
+        </div>
+      </div>
+
+      <!-- Dica explicativa -->
+      <p style="font-size:.82rem;color:var(--cinzaT);margin:12px 0 0;line-height:1.5">
+        ℹ️ Todos os PDFs vinculados a lançamentos cujo mês de referência esteja dentro do intervalo
+        <em>De–Até</em> (ambos inclusive) serão excluídos do Firebase Storage.
+        Os campos de anexo nos respectivos registros do Firestore também serão apagados.
+        Competências abertas e fechadas são igualmente afetadas pelo período selecionado.
+      </p>
+
+      <div id="periodo-alert" style="margin-top:12px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-default" id="modal-periodo-cancel">Cancelar</button>
+      <button class="btn btn-outline" id="btn-confirmar-periodo"
+              style="color:var(--verm);border-color:var(--verm)">
+        🗑️ Excluir PDFs do Período
+      </button>
     </div>
   </div>
 </div>
@@ -816,6 +877,154 @@
     }
 
     document.getElementById('btn-refresh-storage').addEventListener('click', carregarStorageStats);
+
+    // ── Modal: Excluir Anexos por Período ─────────────────────────
+
+    const modalPeriodo = document.getElementById('modal-periodo-storage');
+
+    document.getElementById('btn-excluir-periodo-storage').addEventListener('click', () => {
+      document.getElementById('periodo-de').value = '';
+      document.getElementById('periodo-ate').value = '';
+      document.getElementById('periodo-alert').innerHTML = '';
+      modalPeriodo.style.display = 'flex';
+    });
+
+    ['modal-periodo-close', 'modal-periodo-cancel'].forEach(id => {
+      document.getElementById(id).addEventListener('click', () => {
+        modalPeriodo.style.display = 'none';
+      });
+    });
+
+    modalPeriodo.addEventListener('click', e => {
+      if (e.target === modalPeriodo) modalPeriodo.style.display = 'none';
+    });
+
+    document.getElementById('btn-confirmar-periodo').addEventListener('click', async () => {
+      const deVal  = document.getElementById('periodo-de').value;   // "YYYY-MM"
+      const ateVal = document.getElementById('periodo-ate').value;  // "YYYY-MM"
+      const alertEl = document.getElementById('periodo-alert');
+
+      if (!deVal || !ateVal) {
+        alertEl.innerHTML = alerta('danger', '⚠️ Preencha os dois campos de período.');
+        return;
+      }
+
+      const [deAno, deMes]   = deVal.split('-').map(Number);
+      const [ateAno, ateMes] = ateVal.split('-').map(Number);
+
+      if (deAno > ateAno || (deAno === ateAno && deMes > ateMes)) {
+        alertEl.innerHTML = alerta('danger', '⚠️ O mês "De" deve ser anterior ou igual ao mês "Até".');
+        return;
+      }
+
+      // Build list of months in range
+      const mesesDoRange = [];
+      let y = deAno, m = deMes;
+      while (y < ateAno || (y === ateAno && m <= ateMes)) {
+        mesesDoRange.push({ mes: m, ano: y });
+        m++;
+        if (m > 12) { m = 1; y++; }
+      }
+
+      const nomeMesStr = (mes, ano) => {
+        const nome = (window.MESES || [])[mes - 1] || String(mes).padStart(2, '0');
+        return `${nome}/${ano}`;
+      };
+      const deLabel  = nomeMesStr(deMes, deAno);
+      const ateLabel = nomeMesStr(ateMes, ateAno);
+
+      // 1ª confirmação — lembrete de backup
+      const confirmBackup = confirm(
+        `⚠️ ATENÇÃO — BACKUP OBRIGATÓRIO\n\n` +
+        `Você está prestes a excluir PERMANENTEMENTE todos os PDFs do período:\n` +
+        `📅 De: ${deLabel}  →  Até: ${ateLabel}  (${mesesDoRange.length} competência(s))\n\n` +
+        `Antes de continuar, certifique-se de ter realizado backup dos arquivos relevantes.\n` +
+        `Esta ação NÃO pode ser desfeita.\n\n` +
+        `✅ Já fiz o backup e desejo continuar com a exclusão?`
+      );
+      if (!confirmBackup) return;
+
+      // 2ª confirmação — confirmação final
+      const confirmFinal = confirm(
+        `🗑️ CONFIRMAÇÃO FINAL\n\n` +
+        `Serão excluídos TODOS os PDFs e metadados de anexo dos lançamentos de\n` +
+        `${deLabel} a ${ateLabel} (${mesesDoRange.length} competência(s)).\n\n` +
+        `Os arquivos no Firebase Storage e os campos de anexo no Firestore\n` +
+        `serão removidos definitivamente.\n\n` +
+        `Confirma a exclusão?`
+      );
+      if (!confirmFinal) return;
+
+      modalPeriodo.style.display = 'none';
+      await apagarAnexosPorPeriodo(mesesDoRange);
+    });
+
+    async function apagarAnexosPorPeriodo(meses) {
+      const logEl = document.getElementById('storage-log');
+      logEl.innerHTML = alerta('info', `⏳ Excluindo PDFs de ${meses.length} competência(s)… aguarde.`);
+
+      document.querySelectorAll('#storage-tbody button').forEach(b => { b.disabled = true; });
+      document.getElementById('btn-excluir-periodo-storage').disabled = true;
+
+      let totalApagados = 0;
+      let totalBytes    = 0;
+      let erros         = 0;
+
+      try {
+        const serverTimestamp = firebase.firestore.FieldValue.serverTimestamp;
+        const BATCH_MAX = 500;
+
+        for (const { mes, ano } of meses) {
+          const snap = await window.db.collection('manuais')
+            .where('mes', '==', mes)
+            .where('ano', '==', ano)
+            .get();
+          const comAnexo = snap.docs.filter(d => d.data().anexo_path && d.data().anexo_bytes);
+
+          const deleteResults = await Promise.allSettled(
+            comAnexo.map(doc => firebase.storage().ref(doc.data().anexo_path).delete())
+          );
+          deleteResults.forEach((result, idx) => {
+            if (result.status === 'fulfilled') {
+              totalApagados++;
+              totalBytes += comAnexo[idx].data().anexo_bytes || 0;
+            } else {
+              const err = result.reason;
+              if (err.code !== 'storage/object-not-found') {
+                erros++;
+                console.warn('Erro ao apagar arquivo do Storage:', err);
+              }
+            }
+          });
+
+          for (let i = 0; i < comAnexo.length; i += BATCH_MAX) {
+            const batch = window.db.batch();
+            comAnexo.slice(i, i + BATCH_MAX).forEach(doc => {
+              batch.update(doc.ref, {
+                anexo_url: null,
+                anexo_nome: null,
+                anexo_path: null,
+                anexo_bytes: null,
+                updated_at: serverTimestamp(),
+              });
+            });
+            await batch.commit();
+          }
+        }
+
+        const erroTxt = erros > 0 ? ` (${erros} erro(s) ignorado(s))` : '';
+        logEl.innerHTML = alerta('ok',
+          `✅ ${totalApagados} PDF(s) excluído(s) em ${meses.length} competência(s). ` +
+          `Espaço liberado: ${fmtBytes(totalBytes)}.${erroTxt}`);
+        await carregarStorageStats();
+      } catch(e) {
+        logEl.innerHTML = alerta('danger', '🚨 Erro ao excluir PDFs: ' + escHtml(e.message));
+      } finally {
+        document.getElementById('btn-excluir-periodo-storage').disabled = false;
+        document.querySelectorAll('#storage-tbody button').forEach(b => { b.disabled = false; });
+      }
+    }
+
     carregarStorageStats();
   });
 </script>
