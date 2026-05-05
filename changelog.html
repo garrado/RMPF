@@ -44,14 +44,32 @@
 
         <li class="changelog-item">
           <div class="changelog-version">
+            <span class="badge-version">v1.5.0</span>
+            <span class="badge-date">05/05/2026</span>
+          </div>
+          <div class="changelog-title">Anexo de PDF nos Lançamentos, Monitoramento de Storage, Correções de Permissão e UX do Fiscal</div>
+          <ul class="changelog-changes">
+            <li><strong>Upload de PDF nos lançamentos</strong> — fiscal pode anexar, visualizar e remover um PDF por lançamento em competências abertas; barra de progresso durante o envio; anexo visível na conferência e em meus lançamentos (<code>lancamento.html</code>, <code>meus-lancamentos.html</code>, <code>conferencia.html</code>, <code>js/firestore.js</code>, <code>storage.rules</code>, <code>firestore.rules</code>) — PR #74.</li>
+            <li><strong>Card de monitoramento de Storage no Admin</strong> — painel <code>admin.html</code> exibe uso total do Firebase Storage, gráfico de barras por competência e tabela com exclusão individual de meses fechados — PR #73.</li>
+            <li><strong>Exclusão em lote de PDFs por período</strong> — novo botão <em>🗑️ Excluir por Período</em> no Admin permite apagar todos os PDFs de um intervalo de meses com dupla confirmação e relatório de resultado — PR #77.</li>
+            <li><strong>CORS do Firebase Storage configurado</strong> — criado <code>cors.json</code> autorizando uploads a partir do GitHub Pages; documentação atualizada com comandos <code>gcloud storage</code> — PRs #75 e #76.</li>
+            <li><strong>Correção de permissões na importação de CSV</strong> — campo <code>origem</code> dos documentos corrigido para <code>visa_csv</code>/<code>sim_csv</code>; regra Firestore estendida para permitir re-importação SIM; leitura de <code>app_config/github_token</code> liberada para todos os usuários autenticados — PR #78.</li>
+            <li><strong>Correção de logout indevido ao navegar</strong> — <code>requireAuth</code> em <code>guard.js</code> parava de redirecionar para <code>index.html</code> (logout) quando qualquer erro async ocorria numa sessão válida; corrigido para redirecionar ao <code>dashboard.html</code> — PR #79.</li>
+            <li><strong>Página Conferência removida do menu do Fiscal</strong> — link <em>🔍 Conferência</em> ocultado da barra lateral do Fiscal em todas as páginas; acesso direto via URL redireciona para <code>meus-lancamentos.html</code> sem logout — PR #80.</li>
+          </ul>
+        </li>
+
+        <li class="changelog-item">
+          <div class="changelog-version">
             <span class="badge-version">v1.4.0</span>
             <span class="badge-date">05/05/2026</span>
           </div>
           <div class="changelog-title">Suporte a repositório VISA privado na importação de CSV; token GitHub configurável pelo Admin</div>
           <ul class="changelog-changes">
-            <li><strong>Token GitHub configurável</strong> — novo card <em>🔑 Token do GitHub</em> no painel Admin (<code>admin.html</code>) permite que o administrador configure e salve um Personal Access Token (PAT) com permissão <em>Contents → Read-only</em> no repositório privado <code>garrado/VISA</code>. O token é armazenado no Firestore (<code>app_config/github_token</code>) com regra de escrita restrita ao grupo <em>Administrador</em>. (<a href="https://github.com/garrado/RMPF/pull/71" target="_blank">#71</a>)</li>
-            <li><strong>Importação de CSV via API autenticada</strong> — <code>js/visa-import.js</code> e <code>js/sim-import.js</code> substituem o acesso direto à URL pública do GitHub pela nova função <code>fetchGitHubCSV</code> (<code>js/firestore.js</code>), que usa o PAT armazenado para acessar repositórios privados via GitHub Contents API. Resolve o erro <em>"window.db_setGitHubToken is not a function"</em> exibido ao salvar o token. (<a href="https://github.com/garrado/RMPF/pull/71" target="_blank">#71</a>)</li>
-            <li><strong>Seed de CNAE autenticado</strong> — botão <em>🔄 Sincronizar CNAE com Firestore</em> em <code>admin.html</code> usa a mesma <code>fetchGitHubCSV</code> para importar <code>data/cnae.csv</code> do repositório VISA privado. (<a href="https://github.com/garrado/RMPF/pull/71" target="_blank">#71</a>)</li>
+            <li><strong>Token GitHub configurável</strong> — novo card <em>🔑 Token do GitHub</em> no painel Admin (<code>admin.html</code>) permite que o administrador configure e salve um PAT (Fine-Grained Token) para acessar o repositório privado <code>garrado/VISA</code>; token armazenado em <code>app_config/github_token</code> no Firestore — PR #71.</li>
+            <li><strong>Importação de CSV via API autenticada</strong> — <code>js/visa-import.js</code> e <code>js/sim-import.js</code> substituem o acesso direto à URL pública do GitHub pelo helper <code>fetchGitHubCSV()</code>, que usa a GitHub Contents API com autenticação Bearer — PR #71.</li>
+            <li><strong>Seed de CNAE autenticado</strong> — botão <em>🔄 Sincronizar CNAE com Firestore</em> em <code>admin.html</code> usa a mesma <code>fetchGitHubCSV</code> para importar <code>data/cnae.csv</code> do repositório privado — PR #71.</li>
+            <li><strong>Correção <code>db_setGitHubToken is not a function</code></strong> — funções <code>db_getGitHubToken</code>, <code>db_setGitHubToken</code> e <code>fetchGitHubCSV</code> não estavam exportadas via <code>window.*</code>; corrigido — PR #72.</li>
           </ul>
         </li>
 
@@ -62,7 +80,7 @@
           </div>
           <div class="changelog-title">Correção: dropdown de competência do administrador usa o fiscal mais atrasado como referência</div>
           <ul class="changelog-changes">
-            <li><strong>Lógica do mês aberto para admin corrigida</strong> — <code>getProximaCompetencia</code> em <code>js/firestore.js</code> agora agrupa os fechamentos por fiscal, determina o último fechamento de cada um e usa o <em>mínimo</em> desses como referência; enquanto qualquer fiscal ainda não tiver fechado o mês X, o dropdown do admin aponta para X (mês aberto), e não para além dele.</li>
+            <li><strong>Lógica do mês aberto para admin corrigida</strong> — <code>getProximaCompetencia</code> em <code>js/firestore.js</code> agora agrupa os fechamentos por fiscal, determina o mais recente de cada um e toma o mínimo (fiscal mais atrasado) como referência, evitando que um único fiscal adiantado avance o mês para todos — PR #69.</li>
           </ul>
         </li>
 
@@ -73,8 +91,8 @@
           </div>
           <div class="changelog-title">Fechamento em lote para todos os fiscais; dropdown de competência aponta para o próximo mês aberto</div>
           <ul class="changelog-changes">
-            <li><strong>Botão "Fechar para Todos os Fiscais"</strong> — novo botão bulk-close em <code>fechamento.html</code>; o administrador pode fechar a competência para todos os fiscais de uma só vez, com diálogo de confirmação, processamento em lote (pula fiscais já fechados), banner de resultado com totais e estado de carregamento visual. (<a href="https://github.com/garrado/RMPF/pull/64" target="_blank">#64</a>)</li>
-            <li><strong>Dropdown de competência aponta para o próximo mês aberto</strong> — nova função <code>getProximaCompetencia</code> em <code>js/firestore.js</code> substitui <code>db_getUltimoMesFechado</code> no inicializador de dropdown em todas as páginas (<code>dashboard.html</code>, <code>lancamento.html</code>, <code>meus-lancamentos.html</code>, <code>conferencia.html</code>, <code>fechamento.html</code>, <code>ocorrencias.html</code>); o seletor passa a exibir por padrão o mês imediatamente posterior ao último fechamento registrado. Lógica de admin e fiscal unificada para consultar diretamente a coleção <code>fechamentos</code>, eliminando verificação frágil por contagem de usuários. (<a href="https://github.com/garrado/RMPF/pull/65" target="_blank">#65</a>, <a href="https://github.com/garrado/RMPF/pull/66" target="_blank">#66</a>, <a href="https://github.com/garrado/RMPF/pull/67" target="_blank">#67</a>)</li>
+            <li><strong>Botão "Fechar para Todos os Fiscais"</strong> — novo botão bulk-close em <code>fechamento.html</code>; o administrador pode fechar a competência para todos os fiscais de uma vez, com confirmação e relatório de resultado — PR #64.</li>
+            <li><strong>Dropdown de competência aponta para o próximo mês aberto</strong> — nova função <code>getProximaCompetencia</code> em <code>js/firestore.js</code> substitui <code>db_getUltimoMesFechado</code> nos dropdowns de todas as páginas, apontando para o mês seguinte ao último fechamento — PRs #65, #66, #67.</li>
           </ul>
         </li>
 
@@ -85,9 +103,9 @@
           </div>
           <div class="changelog-title">Dropdown de competência padrão para último mês fechado; bloqueio de exclusão em meses fechados</div>
           <ul class="changelog-changes">
-            <li><strong>Dropdown padrão para último mês fechado</strong> — ao abrir qualquer página com seletor de competência (Dashboard, Lançar Atividade, Meus Lançamentos, Conferência, Ocorrências, Fechamento), o mês selecionado por padrão passa a ser o mês mais recente registrado na coleção <code>fechamentos</code>, em vez de varrer <code>manuais</code> (lógica anterior era lenta e incorreta).</li>
-            <li><strong>Bloqueio de exclusão em meses fechados</strong> — em <code>meus-lancamentos.html</code>, os botões de excluir/retirar lançamentos manuais ficam ocultos quando a competência está fechada; a função <code>excluirManual</code> também bloqueia via guard no JS.</li>
-            <li><strong>Regra Firestore corrigida para deleção de manuais</strong> — o próprio fiscal agora tem permissão de apagar seus registros com status <code>rascunho</code> ou <code>enviado</code> (a regra anterior só permitia ao Administrador).</li>
+            <li><strong>Dropdown padrão para último mês fechado</strong> — ao abrir qualquer página com seletor de competência (Dashboard, Lançar Atividade, Meus Lançamentos, Conferência, Ocorrências, Fechamento), o mês selecionado automaticamente é o último com dados registrados — PR #63.</li>
+            <li><strong>Bloqueio de exclusão em meses fechados</strong> — em <code>meus-lancamentos.html</code>, os botões de excluir/retirar lançamentos manuais ficam ocultos quando a competência está fechada — PR #63.</li>
+            <li><strong>Regra Firestore corrigida para deleção de manuais</strong> — o próprio fiscal agora tem permissão de apagar seus registros com status <code>rascunho</code> ou <code>enviado</code> — PR #63.</li>
           </ul>
         </li>
 
@@ -98,10 +116,10 @@
           </div>
           <div class="changelog-title">Fechamento, Bloqueios, Ciclo de Recusa e Restrições de Perfil</div>
           <ul class="changelog-changes">
-            <li><strong>Persistência e cálculo do fechamento</strong> — ao fechar uma competência, o registro é gravado no Firestore (<code>fechamentos</code>); pontos com status <code>fechado</code> passam a ser contabilizados junto com <code>aceito</code> no Dashboard, Conferência e Fechamento. (<a href="https://github.com/garrado/RMPF/pull/55" target="_blank">#55</a>)</li>
-            <li><strong>Bloqueio de lançamentos e importações em competências fechadas</strong> — <code>lancamento.html</code> exibe banner de aviso e desabilita os botões de salvar e importar; <code>meus-lancamentos.html</code> protege os botões de importação e o link "Nova Atividade"; <code>js/visa-import.js</code> e <code>js/sim-import.js</code> bloqueiam a criação de novos registros em competências já fechadas. (<a href="https://github.com/garrado/RMPF/pull/56" target="_blank">#56</a>)</li>
-            <li><strong>Ciclo admin↔fiscal para recusa e reenvio de lançamentos</strong> — banner de alerta no dashboard do fiscal quando há lançamentos recusados; reimportação de CSV reseta status <code>recusado</code> → <code>enviado</code>; botão "✏️ Corrigir e Reenviar" em <code>meus-lancamentos.html</code> permite ao fiscal editar e reenviar lançamentos manuais recusados. (<a href="https://github.com/garrado/RMPF/pull/57" target="_blank">#57</a>)</li>
-            <li><strong>Perfil Administrativo restrito ao dashboard</strong> — acesso bloqueado a <code>fechamento.html</code>, <code>conferencia.html</code>, <code>ocorrencias.html</code> e <code>changelog.html</code>; sidebar exibe somente o link Dashboard; visão de apresentação exibida no lugar da tabela de fiscais. (<a href="https://github.com/garrado/RMPF/pull/58" target="_blank">#58</a>)</li>
+            <li><strong>Persistência e cálculo do fechamento</strong> — ao fechar uma competência, o registro é gravado no Firestore (<code>fechamentos</code>); pontos com status <code>fechado</code> passam a ser contabilizados no cálculo de PP, PN, PV e Apuração — PR #55.</li>
+            <li><strong>Bloqueio de lançamentos e importações em competências fechadas</strong> — <code>lancamento.html</code> exibe banner de aviso e desabilita os botões de salvar e importar; <code>meus-lancamentos.html</code> bloqueia importação e criação de atividades; importadores VISA/SIM ignoram novos registros de competências fechadas — PR #56.</li>
+            <li><strong>Ciclo admin↔fiscal para recusa e reenvio de lançamentos</strong> — banner de alerta no dashboard do fiscal quando há lançamentos recusados; reimportação de CSV reseta status <code>recusado</code> para <code>enviado</code>; modal "Corrigir e Reenviar" em <code>meus-lancamentos.html</code> para lançamentos manuais recusados — PR #57.</li>
+            <li><strong>Perfil Administrativo restrito ao dashboard</strong> — acesso bloqueado a <code>fechamento.html</code>, <code>conferencia.html</code>, <code>ocorrencias.html</code> e <code>changelog.html</code>; visão de apresentação exibida no lugar da tabela de fiscais — PR #58.</li>
           </ul>
         </li>
 
@@ -112,7 +130,7 @@
           </div>
           <div class="changelog-title">Importação SIM, Card de Enviados e Correções no Dashboard Fiscal</div>
           <ul class="changelog-changes">
-            <li>Novo módulo de importação SIM (<code>js/sim-import.js</code>): leitura do CSV <code>auditoria.csv</code> do repositório VISA, com lock distribuído próprio (<code>sim_import_locks</code>) e botões de importação em <code>lancamento.html</code>, <code>meus-lancamentos.html</code> e <code>conferencia.html</code>.</li>
+            <li>Novo módulo de importação SIM (<code>js/sim-import.js</code>): leitura do CSV <code>auditoria.csv</code> do repositório VISA, com lock distribuído próprio (<code>sim_import_locks</code>) e barra de progresso.</li>
             <li>Regra Firestore adicionada para a coleção <code>sim_import_locks</code>, corrigindo erro de permissão insuficiente ao acionar a importação SIM.</li>
             <li>Novo card amarelo no dashboard fiscal exibindo o total de pontos com status <em>enviado</em> (aguardando homologação) na competência selecionada.</li>
             <li>Reordenação dos cards de métricas fiscais e alargamento do card de Apuração Final para melhor aproveitamento do layout em grade.</li>
