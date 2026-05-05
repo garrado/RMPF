@@ -74,7 +74,7 @@
   // Convenience wrapper — call page init once auth resolves
   window.requireAuth = function (callback) {
     window.authReady.then(callback).catch(() => {
-      window.location.href = 'index.html';
+      window.location.href = 'dashboard.html';
     });
   };
 })();
