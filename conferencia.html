@@ -110,11 +110,12 @@
               <th class="td-num">Pts Req.</th>
               <th class="td-num">Pts Hom.</th>
               <th>Status</th>
+              <th class="td-center nao-imprimir">Anexo</th>
               <th class="nao-imprimir" id="th-acoes">Ações</th>
             </tr>
           </thead>
           <tbody id="tbody-conferencia">
-            <tr class="empty-row"><td colspan="8">Selecione um fiscal e competência</td></tr>
+            <tr class="empty-row"><td colspan="9">Selecione um fiscal e competência</td></tr>
           </tbody>
         </table>
       </div>
@@ -169,6 +170,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 <script src="js/firebase-config.js"></script>
 <script src="js/version.js"></script>
 <script src="js/utils.js"></script>
@@ -273,7 +275,7 @@
     const isAdmin = _grupo === 'Administrador';
 
     if (!_manuais.length) {
-      tbody.innerHTML = '<tr class="empty-row"><td colspan="8">Nenhum lançamento nesta competência</td></tr>';
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="9">Nenhum lançamento nesta competência</td></tr>';
       return;
     }
 
@@ -291,6 +293,15 @@
           acoes = `<button class="btn btn-default btn-sm" onclick="abrirHom('${m.id}')">✏️ Rever</button>`;
         }
       }
+
+      // ── Célula de Anexo (somente leitura) ──
+      let anexoCell = '—';
+      if (m.anexo_url) {
+        const nomeSeguro = escHtml(m.anexo_nome || 'arquivo.pdf');
+        anexoCell = `<a href="${escHtml(m.anexo_url)}" target="_blank" rel="noopener"
+          title="${nomeSeguro}" class="btn btn-outline btn-sm" style="gap:4px">📎 ${nomeSeguro}</a>`;
+      }
+
       return `<tr>
         <td data-label="Controle"><span class="ctrl-num">${escHtml(m.controle||'—')}</span></td>
         <td data-label="Data">${fmtData(m.data)}</td>
@@ -299,6 +310,7 @@
         <td data-label="Pts Req." class="td-num">${m.pontos??'—'}</td>
         <td data-label="Pts Hom." class="td-num">${m.pontos_homologado!=null?m.pontos_homologado:'—'}</td>
         <td data-label="Status">${badge(m.status)}</td>
+        <td data-label="Anexo" class="td-center nao-imprimir">${anexoCell}</td>
         <td data-label="Ações" class="nao-imprimir" style="white-space:nowrap">${acoes}</td>
       </tr>`;
     }).join('');

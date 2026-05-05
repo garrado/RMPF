@@ -1,0 +1,27 @@
+rules_version = '2';
+// INSTRUÇÕES: Copie este arquivo no Firebase Console → Storage → Rules
+// Projeto: visam-3a30b (compartilhado com garrado/VISA)
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // PDFs anexados a lançamentos — caminho: anexos/{docId}/{arquivo.pdf}
+    match /anexos/{docId}/{fileName} {
+      // Qualquer usuário autenticado pode baixar
+      allow read: if request.auth != null;
+
+      // Upload: autenticado + apenas PDF + máximo 10 MB
+      allow write: if request.auth != null
+        && request.resource.size <= 10 * 1024 * 1024
+        && request.resource.contentType == 'application/pdf';
+
+      // Deleção: qualquer usuário autenticado
+      // (a validação de "quem pode apagar" é feita no client-side)
+      allow delete: if request.auth != null;
+    }
+
+    // Qualquer outro caminho: bloqueado
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

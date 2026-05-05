@@ -513,6 +513,82 @@ async function fetchGitHubCSV(filePath) {
   return resp.text();
 }
 
+// ── Anexos de Manuais (Upload / Remoção) ─────────────────
+
+/**
+ * Faz upload de um PDF para o Firebase Storage e atualiza os campos
+ * de anexo no documento da coleção `manuais`.
+ *
+ * @param {string}   docId      - ID do documento na coleção manuais
+ * @param {File}     file       - arquivo PDF (máx 10 MB)
+ * @param {function(number):void} [onProgress] - callback com % de 0–100
+ * @returns {Promise<{url: string, path: string}>}
+ */
+async function uploadAnexoManual(docId, file, onProgress) {
+  const MAX_BYTES = 10 * 1024 * 1024;
+  if (!file) throw new Error('Nenhum arquivo selecionado.');
+  if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+    throw new Error('Apenas arquivos PDF são permitidos.');
+  }
+  if (file.size > MAX_BYTES) {
+    throw new Error(`O arquivo excede o limite de 10 MB (tamanho: ${(file.size / 1024 / 1024).toFixed(1)} MB).`);
+  }
+
+  const path = `anexos/${docId}/${file.name}`;
+  const storageRef = firebase.storage().ref(path);
+  const uploadTask = storageRef.put(file, { contentType: 'application/pdf' });
+
+  return new Promise((resolve, reject) => {
+    uploadTask.on(
+      'state_changed',
+      (snapshot) => {
+        const pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+        if (onProgress) onProgress(pct);
+      },
+      (error) => reject(error),
+      async () => {
+        try {
+          const url = await uploadTask.snapshot.ref.getDownloadURL();
+          await window.db.collection('manuais').doc(docId).update({
+            anexo_url:   url,
+            anexo_nome:  file.name,
+            anexo_path:  path,
+            anexo_bytes: file.size,
+            updated_at:  firebase.firestore.FieldValue.serverTimestamp(),
+          });
+          resolve({ url, path });
+        } catch (e) {
+          reject(e);
+        }
+      }
+    );
+  });
+}
+
+/**
+ * Remove o PDF do Firebase Storage e limpa os campos de anexo no Firestore.
+ *
+ * @param {string} docId      - ID do documento na coleção manuais
+ * @param {string} anexoPath  - caminho do arquivo no Storage (ex: anexos/{docId}/{nome})
+ * @returns {Promise<void>}
+ */
+async function removeAnexoManual(docId, anexoPath) {
+  if (anexoPath) {
+    try {
+      await firebase.storage().ref(anexoPath).delete();
+    } catch (err) {
+      if (err.code !== 'storage/object-not-found') throw err;
+    }
+  }
+  await window.db.collection('manuais').doc(docId).update({
+    anexo_url:   null,
+    anexo_nome:  null,
+    anexo_path:  null,
+    anexo_bytes: null,
+    updated_at:  firebase.firestore.FieldValue.serverTimestamp(),
+  });
+}
+
 // ── Armazenamento — Anexos por competência ────────────────
 
 async function getAnexosPorMes() {
@@ -581,3 +657,5 @@ window.db_setGitHubToken        = db_setGitHubToken;
 window.fetchGitHubCSV           = fetchGitHubCSV;
 window.db_getAnexosPorMes       = getAnexosPorMes;
 window.db_getFechamentosTodos   = getFechamentosTodos;
+window.db_uploadAnexoManual     = uploadAnexoManual;
+window.db_removeAnexoManual     = removeAnexoManual;
