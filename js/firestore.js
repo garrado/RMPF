@@ -442,19 +442,18 @@ const getUltimoMesAberto = getUltimoMesFechado;
 async function getProximaCompetencia(fiscalEmail) {
   const now = new Date();
 
-  // Para fiscal individual: usa orderBy + limit(1) — retorna apenas 1 documento.
+  // Para fiscal individual: busca todos os fechamentos do fiscal e ordena
+  //   client-side para evitar a necessidade de índice composto no Firestore.
   // Para admin (sem fiscalEmail): busca todos pois precisa agrupar por fiscal e
   //   determinar o fiscal mais atrasado (mínimo dos últimos fechamentos de cada um).
-  // Nota: requer índice composto em `fechamentos` para (fiscal_email ASC, ano DESC, mes DESC).
   if (fiscalEmail) {
     const snap = await window.db.collection('fechamentos')
       .where('fiscal_email', '==', fiscalEmail)
-      .orderBy('ano', 'desc')
-      .orderBy('mes', 'desc')
-      .limit(1)
       .get();
     if (snap.empty) return { mes: now.getMonth() + 1, ano: now.getFullYear() };
-    const refDoc = snap.docs[0].data();
+    const docs = snap.docs.map(d => d.data());
+    docs.sort((a, b) => Number(b.ano) - Number(a.ano) || Number(b.mes) - Number(a.mes));
+    const refDoc = docs[0];
     let mes = Number(refDoc.mes) + 1;
     let ano = Number(refDoc.ano);
     if (mes > 12) { mes = 1; ano++; }
