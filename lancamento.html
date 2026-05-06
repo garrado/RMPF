@@ -193,6 +193,7 @@
 <script src="js/utils.js"></script>
 <script src="js/calculo.js"></script>
 <script src="js/firestore.js"></script>
+  <script src="js/db-monitor.js"></script>
 <script src="js/guard.js"></script>
 <script src="js/visa-import.js"></script>
 <script src="js/sim-import.js"></script>
@@ -384,6 +385,7 @@
   }
 
   requireAuth(async user => {
+    if (window.dbMonitor) window.dbMonitor.enable(user.grupo);
     if (user.grupo !== 'Fiscal') {
       window.location.href = 'dashboard.html';
       return;

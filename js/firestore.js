@@ -404,9 +404,21 @@ async function saveFechamento(fiscalEmail, mes, ano, data) {
 
 async function getUltimoMesFechado(fiscalEmail) {
   const now = new Date();
-  let q = window.db.collection('fechamentos');
-  if (fiscalEmail) q = q.where('fiscal_email', '==', fiscalEmail);
-  const snap = await q.get();
+  // Para fiscal individual: usa orderBy + limit(1) — retorna apenas 1 documento.
+  // Para admin (sem fiscalEmail): busca todos pois precisa agrupar por fiscal.
+  // Nota: requer índice composto em `fechamentos` para (fiscal_email ASC, ano DESC, mes DESC).
+  if (fiscalEmail) {
+    const snap = await window.db.collection('fechamentos')
+      .where('fiscal_email', '==', fiscalEmail)
+      .orderBy('ano', 'desc')
+      .orderBy('mes', 'desc')
+      .limit(1)
+      .get();
+    if (snap.empty) return { mes: now.getMonth() + 1, ano: now.getFullYear() };
+    const d = snap.docs[0].data();
+    return { mes: d.mes, ano: d.ano };
+  }
+  const snap = await window.db.collection('fechamentos').get();
   if (snap.empty) return { mes: now.getMonth() + 1, ano: now.getFullYear() };
   const docs = snap.docs.map(d => d.data());
   docs.sort((a, b) => b.ano - a.ano || b.mes - a.mes);
@@ -430,21 +442,34 @@ const getUltimoMesAberto = getUltimoMesFechado;
 async function getProximaCompetencia(fiscalEmail) {
   const now = new Date();
 
-  let q = window.db.collection('fechamentos');
-  if (fiscalEmail) q = q.where('fiscal_email', '==', fiscalEmail);
-  const snap = await q.get();
+  // Para fiscal individual: usa orderBy + limit(1) — retorna apenas 1 documento.
+  // Para admin (sem fiscalEmail): busca todos pois precisa agrupar por fiscal e
+  //   determinar o fiscal mais atrasado (mínimo dos últimos fechamentos de cada um).
+  // Nota: requer índice composto em `fechamentos` para (fiscal_email ASC, ano DESC, mes DESC).
+  if (fiscalEmail) {
+    const snap = await window.db.collection('fechamentos')
+      .where('fiscal_email', '==', fiscalEmail)
+      .orderBy('ano', 'desc')
+      .orderBy('mes', 'desc')
+      .limit(1)
+      .get();
+    if (snap.empty) return { mes: now.getMonth() + 1, ano: now.getFullYear() };
+    const refDoc = snap.docs[0].data();
+    let mes = Number(refDoc.mes) + 1;
+    let ano = Number(refDoc.ano);
+    if (mes > 12) { mes = 1; ano++; }
+    return { mes, ano };
+  }
+
+  const snap = await window.db.collection('fechamentos').get();
   if (snap.empty) return { mes: now.getMonth() + 1, ano: now.getFullYear() };
 
   const docs = snap.docs.map(d => d.data());
 
-  // Para fiscal individual: usa o fechamento mais recente dele.
   // Para admin: agrupa por fiscal e pega o mínimo dos últimos fechamentos
   //   de cada fiscal (o fiscal mais atrasado define o mês aberto).
   let refDoc;
-  if (fiscalEmail) {
-    docs.sort((a, b) => Number(b.ano) - Number(a.ano) || Number(b.mes) - Number(a.mes));
-    refDoc = docs[0];
-  } else {
+  {
     // Agrupar por fiscal_email → pegar o mais recente de cada um
     const porFiscal = {};
     for (const d of docs) {
@@ -590,9 +615,10 @@ async function removeAnexoManual(docId, anexoPath) {
 // ── Armazenamento — Anexos por competência ────────────────
 
 async function getAnexosPorMes() {
-  // Busca TODOS os manuais — filtra client-side os que têm anexo_bytes
-  // (Firestore não permite "where field != null" de forma portável na versão compat)
-  const snap = await window.db.collection('manuais').get();
+  // Filtra server-side apenas manuais com anexo_bytes > 0, evitando full scan.
+  const snap = await window.db.collection('manuais')
+    .where('anexo_bytes', '>', 0)
+    .get();
   const porMes = {};
   let totalBytes = 0;
   snap.docs.forEach(d => {
@@ -609,7 +635,7 @@ async function getAnexosPorMes() {
 }
 
 async function getFechamentosTodos() {
-  const snap = await window.db.collection('fechamentos').get();
+  const snap = await window.db.collection('fechamentos').limit(500).get();
   return snap.docs.map(d => d.data());
 }
 
