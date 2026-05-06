@@ -447,12 +447,15 @@ async function getProximaCompetencia(fiscalEmail) {
   // Para admin (sem fiscalEmail): busca todos pois precisa agrupar por fiscal e
   //   determinar o fiscal mais atrasado (mínimo dos últimos fechamentos de cada um).
   if (fiscalEmail) {
+    // Cada fiscal tem no máximo um fechamento por mês (≈12–24 docs por ano),
+    // por isso a ordenação client-side é eficiente e dispensa índice composto.
     const snap = await window.db.collection('fechamentos')
       .where('fiscal_email', '==', fiscalEmail)
       .get();
     if (snap.empty) return { mes: now.getMonth() + 1, ano: now.getFullYear() };
     const docs = snap.docs.map(d => d.data());
     docs.sort((a, b) => Number(b.ano) - Number(a.ano) || Number(b.mes) - Number(a.mes));
+    if (!docs.length) return { mes: now.getMonth() + 1, ano: now.getFullYear() };
     const refDoc = docs[0];
     let mes = Number(refDoc.mes) + 1;
     let ano = Number(refDoc.ano);
