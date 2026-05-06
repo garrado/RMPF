@@ -73,8 +73,8 @@
 
   // Convenience wrapper — call page init once auth resolves
   window.requireAuth = function (callback) {
-    window.authReady.then(callback).catch(() => {
-      window.location.href = 'dashboard.html';
-    });
+   window.authReady.then(user => {
+  Promise.resolve(callback(user)).catch(e => console.error('[requireAuth] Page init error:', e));
+}).catch(() => { location.href = 'dashboard.html'; });
   };
 })();
