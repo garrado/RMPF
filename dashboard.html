@@ -362,7 +362,9 @@
       document.getElementById('view-fiscal').style.display = '';
       buildMesSelect('sel-mes');
       buildAnoSelect('sel-ano');
-      const { mes: _um, ano: _ua } = await db_getProximaCompetencia(user.email);
+      let _um = new Date().getMonth() + 1, _ua = new Date().getFullYear();
+      try { ({ mes: _um, ano: _ua } = await db_getProximaCompetencia(user.email)); }
+      catch (e) { console.warn('[Dashboard] Falha ao obter próxima competência:', e); }
       document.getElementById('sel-mes').value = _um;
       document.getElementById('sel-ano').value = _ua;
       // Show persistent banner if there are any refused records (across all competências)
@@ -378,7 +380,9 @@
       document.getElementById('view-admin').style.display = '';
       buildMesSelect('admin-sel-mes');
       buildAnoSelect('admin-sel-ano');
-      const { mes: _um, ano: _ua } = await db_getProximaCompetencia();
+      let _um = new Date().getMonth() + 1, _ua = new Date().getFullYear();
+      try { ({ mes: _um, ano: _ua } = await db_getProximaCompetencia()); }
+      catch (e) { console.warn('[Dashboard] Falha ao obter próxima competência (admin):', e); }
       document.getElementById('admin-sel-mes').value = _um;
       document.getElementById('admin-sel-ano').value = _ua;
       loadAdmin();
