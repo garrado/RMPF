@@ -548,7 +548,7 @@ async function fetchGitHubCSV(filePath) {
  * @returns {Promise<{url: string, path: string}>}
  */
 async function uploadAnexoManual(docId, file, onProgress) {
-  const MAX_BYTES = 10 * 1024 * 1024;
+  const MAX_BYTES = 5 * 1024 * 1024;
   if (!file) throw new Error('Nenhum arquivo selecionado.');
   if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
     throw new Error('Apenas arquivos PDF são permitidos.');
