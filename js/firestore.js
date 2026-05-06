@@ -554,7 +554,7 @@ async function uploadAnexoManual(docId, file, onProgress) {
     throw new Error('Apenas arquivos PDF são permitidos.');
   }
   if (file.size > MAX_BYTES) {
-    throw new Error(`O arquivo excede o limite de 10 MB (tamanho: ${(file.size / 1024 / 1024).toFixed(1)} MB).`);
+    throw new Error(`O arquivo excede o limite de 5 MB (tamanho: ${(file.size / 1024 / 1024).toFixed(1)} MB).`);
   }
 
   const path = `anexos/${docId}/${file.name}`;
