@@ -317,7 +317,7 @@
       .reduce((s, m) => s + (Number(m.pontos) || 0), 0);
     document.getElementById('m-env').textContent = ptosEnviados;
 
-    const aceitas = _manuais.filter(m => m.status === 'aceito' || m.status === 'fechado');
+    const aceitas = _manuais.filter(m => m.status === 'aceito' || m.status === 'fechado').sort((a, b) => (a.data || '').localeCompare(b.data || ''));
     const tbodyAtiv = document.getElementById('tbody-ativ');
     tbodyAtiv.innerHTML = aceitas.length ? aceitas.map(m =>
       `<tr><td data-label="Controle"><span class="ctrl-num">${escHtml(m.controle||'—')}</span></td><td data-label="Data">${fmtData(m.data)}</td>
@@ -353,7 +353,7 @@
 
     if (_ocorrs.length) {
       document.getElementById('rel-ocorrs-section').style.display = '';
-      document.getElementById('rel-tbody-ocorrs').innerHTML = _ocorrs.map(o =>
+      document.getElementById('rel-tbody-ocorrs').innerHTML = [..._ocorrs].sort((a, b) => (a.data_inicio || '').localeCompare(b.data_inicio || '')).map(o =>
         `<tr><td style="border:1px solid #ccc;padding:4px 7px">${TIPO_LABELS[o.tipo]||o.tipo}</td>
          <td style="border:1px solid #ccc;padding:4px 7px">${fmtData(o.data_inicio)}${o.data_fim?' — '+fmtData(o.data_fim):''}</td>
          <td style="border:1px solid #ccc;padding:4px 7px">${o.obs_admin||o.descricao||'—'}</td></tr>`

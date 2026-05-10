@@ -279,7 +279,7 @@
       return;
     }
 
-    tbody.innerHTML = _manuais.map(m => {
+    tbody.innerHTML = [..._manuais].sort((a, b) => (a.data || '').localeCompare(b.data || '')).map(m => {
       const tipo = TIPOS_ATIVIDADE.find(t => t.codigo === m.tipo_codigo) || {};
       let acoes = '—';
       if (m.origem === 'visa_csv' && !isAdmin) {
