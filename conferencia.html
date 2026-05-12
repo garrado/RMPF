@@ -61,7 +61,7 @@
         📥 Importar SIM — Todos os Fiscais
       </button>
       <button class="btn btn-danger btn-sm" id="btn-apagar-todos" type="button"
-              style="display:none" title="Apagar lançamentos importados (VISA e SIM) do mês — lançamentos manuais dos fiscais NÃO são apagados">
+              style="display:none" title="Apagar lançamentos importados (VISA e SIM) do mês — lançamentos dos fiscais NÃO são apagados">
         🗑️ Apagar Lançamentos Importados (VISA e SIM)
       </button>
     </div>
@@ -98,7 +98,7 @@
     </div>
 
     <div class="card">
-      <div class="card-title">📋 Lançamentos Manuais</div>
+      <div class="card-title">📋 Lançamentos</div>
       <div class="table-wrap">
         <table class="rmpf-table">
           <thead>
@@ -294,12 +294,15 @@
         }
       }
 
-      // ── Célula de Anexo (somente leitura) ──
+      // ── Célula de Anexo ──
       let anexoCell = '—';
       if (m.anexo_url) {
         const nomeSeguro = escHtml(m.anexo_nome || 'arquivo.pdf');
-        anexoCell = `<a href="${escHtml(m.anexo_url)}" target="_blank" rel="noopener"
-          title="${nomeSeguro}" class="btn btn-outline btn-sm" style="gap:4px">📎 ${nomeSeguro}</a>`;
+        anexoCell = `<div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+          <a href="${escHtml(m.anexo_url)}" target="_blank" rel="noopener"
+             title="${nomeSeguro}" class="btn btn-outline btn-sm" style="gap:4px">📎 ${nomeSeguro}</a>
+          ${isAdmin ? `<button class="btn btn-danger btn-sm" onclick="removerAnexoAdmin('${m.id}','${escHtml(m.anexo_path || '')}')" title="Remover PDF">🗑️ Remover</button>` : ''}
+        </div>`;
       }
 
       return `<tr>
@@ -329,6 +332,17 @@
     document.getElementById('modal-hom').style.display = 'flex';
   }
 
+  async function removerAnexoAdmin(docId, anexoPath) {
+    if (!confirm('Remover o PDF anexado a este lançamento?')) return;
+    try {
+      await db_removeAnexoManual(docId, anexoPath);
+      document.getElementById('alert-area').innerHTML = alerta('ok', 'Anexo removido com sucesso.');
+      loadConferencia();
+    } catch(e) {
+      document.getElementById('alert-area').innerHTML = alerta('danger', 'Erro ao remover anexo: ' + escHtml(e.message));
+    }
+  }
+
   async function homologar(status) {
     const id     = document.getElementById('hom-id').value;
     const ponHom = document.getElementById('hom-pts-hom').value;
@@ -352,6 +366,7 @@
   }
 
   window.abrirHom = abrirHom;
+  window.removerAnexoAdmin = removerAnexoAdmin;
 
   document.getElementById('btn-aceitar').addEventListener('click', () => homologar('aceito'));
   document.getElementById('btn-recusar').addEventListener('click', () => homologar('recusado'));
@@ -522,7 +537,7 @@
         return;
       }
 
-      if (!confirm(`⚠️ Apagar lançamentos importados (VISA e SIM) de ${mesNome}/${ano}?\n\nLançamentos manuais dos fiscais NÃO serão apagados.\nEsta ação é IRREVERSÍVEL.`)) return;
+      if (!confirm(`⚠️ Apagar lançamentos importados (VISA e SIM) de ${mesNome}/${ano}?\n\nLançamentos dos fiscais NÃO serão apagados.\nEsta ação é IRREVERSÍVEL.`)) return;
       if (!confirm(`Confirmação final: apagar lançamentos importados (VISA e SIM) de ${mesNome}/${ano}?`)) return;
       const logEl = document.getElementById('import-visa-log');
       btnApagarTodos.disabled = true;
