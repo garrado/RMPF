@@ -301,7 +301,7 @@
         anexoCell = `<div style="display:flex;flex-direction:column;align-items:center;gap:3px">
           <a href="${escHtml(m.anexo_url)}" target="_blank" rel="noopener"
              title="${nomeSeguro}" class="btn btn-outline btn-sm" style="gap:4px">📎 ${nomeSeguro}</a>
-          ${isAdmin ? `<button class="btn btn-danger btn-sm js-remover-anexo-admin" data-doc-id="${escHtml(m.id)}" data-anexo-path="${escHtml(m.anexo_path || '')}" title="Remover PDF">🗑️ Remover</button>` : ''}
+          ${isAdmin ? `<button class="btn btn-danger btn-sm js-remover-anexo-admin" data-doc-id="${escHtml(m.id)}" data-anexo-path="${escHtml(m.anexo_path || '')}" title="Remover PDF" aria-label="Remover anexo do lançamento">🗑️ Remover</button>` : ''}
         </div>`;
       }
 
@@ -333,6 +333,10 @@
   }
 
   async function removerAnexoAdmin(docId, anexoPath) {
+    if (!docId) {
+      document.getElementById('alert-area').innerHTML = alerta('warn', 'Não foi possível identificar o lançamento do anexo.');
+      return;
+    }
     if (!confirm('Remover o PDF anexado a este lançamento?')) return;
     try {
       await db_removeAnexoManual(docId, anexoPath);
@@ -341,7 +345,7 @@
     } catch(e) {
       let detalhe = e?.message || 'Falha inesperada.';
       if (e?.code === 'storage/unauthorized') detalhe = 'Sem permissão para remover o arquivo.';
-      if (e?.code === 'storage/retry-limit-exceeded') detalhe = 'Falha de rede ao remover o arquivo. Tente novamente.';
+      else if (e?.code === 'storage/retry-limit-exceeded') detalhe = 'Falha de rede ao remover o arquivo. Tente novamente.';
       document.getElementById('alert-area').innerHTML = alerta('danger', 'Erro ao remover anexo: ' + escHtml(detalhe));
     }
   }
@@ -374,7 +378,12 @@
   document.getElementById('tbody-conferencia').addEventListener('click', (ev) => {
     const btn = ev.target.closest('.js-remover-anexo-admin');
     if (!btn) return;
-    removerAnexoAdmin(btn.dataset.docId || '', btn.dataset.anexoPath || '');
+    const docId = btn.dataset.docId;
+    if (!docId) {
+      document.getElementById('alert-area').innerHTML = alerta('warn', 'Não foi possível identificar o lançamento do anexo.');
+      return;
+    }
+    removerAnexoAdmin(docId, btn.dataset.anexoPath || '');
   });
 
   document.getElementById('btn-aceitar').addEventListener('click', () => homologar('aceito'));
