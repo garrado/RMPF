@@ -301,7 +301,7 @@
         anexoCell = `<div style="display:flex;flex-direction:column;align-items:center;gap:3px">
           <a href="${escHtml(m.anexo_url)}" target="_blank" rel="noopener"
              title="${nomeSeguro}" class="btn btn-outline btn-sm" style="gap:4px">📎 ${nomeSeguro}</a>
-          ${isAdmin ? `<button class="btn btn-danger btn-sm js-remover-anexo-admin" data-doc-id="${escHtml(m.id)}" data-anexo-path="${escHtml(m.anexo_path || '')}" title="Remover PDF">🗑️ Remover</button>` : ''}
+          ${isAdmin ? `<button class="btn btn-danger btn-sm js-remover-anexo-admin" data-doc-id="${escHtml(m.id)}" data-anexo-path="${escHtml(m.anexo_path || '')}" title="Remover PDF" aria-label="Remover anexo PDF deste lançamento">🗑️ Remover</button>` : ''}
         </div>`;
       }
 
@@ -373,7 +373,6 @@
   }
 
   window.abrirHom = abrirHom;
-  window.removerAnexoAdmin = removerAnexoAdmin;
 
   document.getElementById('tbody-conferencia').addEventListener('click', (ev) => {
     const btn = ev.target.closest('.js-remover-anexo-admin');
