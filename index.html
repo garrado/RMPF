@@ -72,7 +72,7 @@
       keysToRemove.forEach(function (key) { localStorage.removeItem(key); });
       localStorage.setItem(VERSION_KEY, APP_VERSION);
 
-      // Desregistra todos os Service Workers antigos e limpa caches
+      // Desregistra todos os Service Workers antigos e limpa caches ..
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then(function (registrations) {
           const unregisterAll = registrations.map(function (reg) {
