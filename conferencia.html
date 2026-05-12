@@ -301,7 +301,7 @@
         anexoCell = `<div style="display:flex;flex-direction:column;align-items:center;gap:3px">
           <a href="${escHtml(m.anexo_url)}" target="_blank" rel="noopener"
              title="${nomeSeguro}" class="btn btn-outline btn-sm" style="gap:4px">📎 ${nomeSeguro}</a>
-          ${isAdmin ? `<button class="btn btn-danger btn-sm" onclick="removerAnexoAdmin('${m.id}','${escHtml(m.anexo_path || '')}')" title="Remover PDF">🗑️ Remover</button>` : ''}
+          ${isAdmin ? `<button class="btn btn-danger btn-sm" onclick="removerAnexoAdmin('${escHtml(m.id)}','${escHtml(m.anexo_path || '')}')" title="Remover PDF">🗑️ Remover</button>` : ''}
         </div>`;
       }
 
