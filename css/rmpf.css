@@ -535,6 +535,7 @@ table.rmpf-table {
   padding: 2px 6px;
   border-radius: 4px;
   color: var(--cinzaT);
+  white-space: nowrap;
 }
 
 /* ── Progress bar ── */
