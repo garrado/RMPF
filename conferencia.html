@@ -301,7 +301,7 @@
         anexoCell = `<div style="display:flex;flex-direction:column;align-items:center;gap:3px">
           <a href="${escHtml(m.anexo_url)}" target="_blank" rel="noopener"
              title="${nomeSeguro}" class="btn btn-outline btn-sm" style="gap:4px">📎 ${nomeSeguro}</a>
-          ${isAdmin ? `<button class="btn btn-danger btn-sm" onclick="removerAnexoAdmin('${escHtml(m.id)}','${escHtml(m.anexo_path || '')}')" title="Remover PDF">🗑️ Remover</button>` : ''}
+          ${isAdmin ? `<button class="btn btn-danger btn-sm js-remover-anexo-admin" data-doc-id="${escHtml(m.id)}" data-anexo-path="${escHtml(m.anexo_path || '')}" title="Remover PDF">🗑️ Remover</button>` : ''}
         </div>`;
       }
 
@@ -339,7 +339,10 @@
       document.getElementById('alert-area').innerHTML = alerta('ok', 'Anexo removido com sucesso.');
       loadConferencia();
     } catch(e) {
-      document.getElementById('alert-area').innerHTML = alerta('danger', 'Erro ao remover anexo: ' + escHtml(e.message));
+      let detalhe = e?.message || 'Falha inesperada.';
+      if (e?.code === 'storage/unauthorized') detalhe = 'Sem permissão para remover o arquivo.';
+      if (e?.code === 'storage/retry-limit-exceeded') detalhe = 'Falha de rede ao remover o arquivo. Tente novamente.';
+      document.getElementById('alert-area').innerHTML = alerta('danger', 'Erro ao remover anexo: ' + escHtml(detalhe));
     }
   }
 
@@ -367,6 +370,12 @@
 
   window.abrirHom = abrirHom;
   window.removerAnexoAdmin = removerAnexoAdmin;
+
+  document.getElementById('tbody-conferencia').addEventListener('click', (ev) => {
+    const btn = ev.target.closest('.js-remover-anexo-admin');
+    if (!btn) return;
+    removerAnexoAdmin(btn.dataset.docId || '', btn.dataset.anexoPath || '');
+  });
 
   document.getElementById('btn-aceitar').addEventListener('click', () => homologar('aceito'));
   document.getElementById('btn-recusar').addEventListener('click', () => homologar('recusado'));
