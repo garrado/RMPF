@@ -272,6 +272,50 @@ test('origem insp360 nas regras de não cumulatividade', () => {
   assert.equal(ehPlantaoManual({ origem: 'manual', tipo_codigo: 'PLT', status: 'enviado' }), true);
 });
 
+test('dia inteiro: OPF e SRV acumulam no mesmo dia (nos dois sentidos); plantão não', async () => {
+  // Pares
+  assert.equal(conflitamDiaInteiro('OPF', 'SRV'), false);
+  assert.equal(conflitamDiaInteiro('SRV', 'OPF'), false);
+  assert.equal(conflitamDiaInteiro('PLT', 'OPF'), true);
+  assert.equal(conflitamDiaInteiro('SRV', 'PLT'), true);
+  assert.equal(conflitamDiaInteiro('OPF', 'OPF'), true);
+  assert.equal(conflitamDiaInteiro('SRV', 'SRV'), true);
+
+  const db = new fake.FakeFirestore();
+  window.db = db;
+  const man = (id, data, tipo, extra) => db.semear('manuais', id, { fiscal_email: C.email,
+    mes: MES, ano: ANO, data, origem: 'manual', tipo_codigo: tipo, tipo_nome: tipo,
+    status: 'enviado', pontos: 48, ...(extra || {}) });
+  man('opf20', '2026-11-20', 'OPF');
+  man('srv21', '2026-11-21', 'SRV');
+  man('plt23', '2026-11-23', 'PLT');
+  const ids = (l) => l.map(m => m.id);
+  // OPF já lançada → SRV liberado; SRV já lançado → OPF liberada
+  assert.deepEqual(ids(await atividadesDiaInteiroNoDia(C.email, '2026-11-20', null, 'SRV')), []);
+  assert.deepEqual(ids(await atividadesDiaInteiroNoDia(C.email, '2026-11-21', null, 'OPF')), []);
+  // Continuam bloqueados: plantão × OPF/SRV e a mesma atividade repetida
+  assert.deepEqual(ids(await atividadesDiaInteiroNoDia(C.email, '2026-11-20', null, 'PLT')), ['opf20']);
+  assert.deepEqual(ids(await atividadesDiaInteiroNoDia(C.email, '2026-11-23', null, 'SRV')), ['plt23']);
+  assert.deepEqual(ids(await atividadesDiaInteiroNoDia(C.email, '2026-11-21', null, 'SRV')), ['srv21']);
+
+  // Revalidação: OPF + SRV homologados no mesmo dia NÃO são reabertos; PLT + SRV são.
+  db.semear('manuais', 'hOpf', { fiscal_email: C.email, mes: MES, ano: ANO, data: '2026-11-24',
+    origem: 'manual', tipo_codigo: 'OPF', status: 'aceito', pontos: 48, pontos_homologado: 48 });
+  db.semear('manuais', 'hSrv', { fiscal_email: C.email, mes: MES, ano: ANO, data: '2026-11-24',
+    origem: 'manual', tipo_codigo: 'SRV', status: 'aceito', pontos: 48, pontos_homologado: 48 });
+  db.semear('manuais', 'hPlt', { fiscal_email: C.email, mes: MES, ano: ANO, data: '2026-11-25',
+    origem: 'manual', tipo_codigo: 'PLT', status: 'aceito', pontos: 48, pontos_homologado: 48 });
+  db.semear('manuais', 'hSrv2', { fiscal_email: C.email, mes: MES, ano: ANO, data: '2026-11-25',
+    origem: 'manual', tipo_codigo: 'SRV', status: 'aceito', pontos: 48, pontos_homologado: 48 });
+  servir([CAB].join('\n'), 'CONTROLE;VISITA_CTRL;SUBCLASSE');
+  await revalidarMesVISA({ mes: MES, ano: ANO });
+  const doc = (id) => db._col('manuais').get(id);
+  assert.equal(doc('hOpf').status, 'aceito');
+  assert.equal(doc('hSrv').status, 'aceito');
+  assert.equal(doc('hPlt').status, 'enviado', 'plantão + serviço técnico: reaberto');
+  assert.equal(doc('hSrv2').status, 'enviado');
+});
+
 test('Conferência: duplicidade CVS × 360 pela mesma inspeção', () => {
   const base = { fiscal_email: A.email, data: '2026-11-05', codigo: 'R1', visa_cnae: '1111-1/01', status: 'enviado' };
   const lista = [

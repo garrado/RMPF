@@ -44,6 +44,20 @@
 
         <li class="changelog-item">
           <div class="changelog-version">
+            <span class="badge-version">v1.43.0</span>
+            <span class="badge-date">13/11/2026</span>
+          </div>
+          <div class="changelog-title">Operação fiscal e Serviços técnicos podem ser lançados no mesmo dia</div>
+          <ul class="changelog-changes">
+            <li><strong>Bloqueio retirado nos dois sentidos</strong> &mdash; quem já tem <em>Operação fiscal</em> (item 18) na data pode lançar <em>Serviços técnicos requisitados pela chefia</em> (item 17), e vice-versa. O Anexo VII do Decreto 49.723/2023 só veda a operação fiscal com <strong>vistoria</strong> (item 18) e não traz vedação entre os itens 17 e 18; o bloqueio da v1.20.0 era interpretação (&ldquo;dia inteiro&rdquo;), não texto do decreto.</li>
+            <li><strong>Continua bloqueado</strong> &mdash; Plantão fiscal com Operação fiscal ou com Serviços técnicos no mesmo dia, e a mesma atividade de dia inteiro lançada duas vezes na data. Operação fiscal &times; vistoria (item 18) e as demais regras de n&atilde;o cumulatividade com vistoria n&atilde;o mudaram.</li>
+            <li><strong>Onde vale</strong> &mdash; novo lan&ccedil;amento (<code>lancamento.html</code>), edi&ccedil;&atilde;o e corre&ccedil;&atilde;o de data (<code>meus-lancamentos.html</code>) e revalida&ccedil;&atilde;o do m&ecirc;s, que deixa de reabrir OPF + SRV homologados no mesmo dia. As mensagens de bloqueio n&atilde;o atribuem mais ao decreto uma veda&ccedil;&atilde;o que ele n&atilde;o tem.</li>
+            <li><strong>Arquivos</strong> &mdash; <code>js/visa-import.js</code> (<code>conflitamDiaInteiro</code>, <code>PARES_DIA_INTEIRO_CUMULATIVOS</code>, <code>atividadesDiaInteiroNoDia</code> com o tipo pretendido); <code>lancamento.html</code>; <code>meus-lancamentos.html</code>; <code>tests/insp360-calculo.test.js</code>; <code>docs/RN-RMPF-REGRAS-NEGOCIO-v1.0.md</code> (RN-NCU-004); <code>js/version.js</code> &mdash; 1.43.0; <code>service-worker.js</code> &mdash; <code>rmpf-v1.43.0</code>; <code>changelog.html</code> &mdash; esta entrada.</li>
+          </ul>
+        </li>
+
+        <li class="changelog-item">
+          <div class="changelog-version">
             <span class="badge-version">v1.42.0</span>
             <span class="badge-date">05/11/2026</span>
           </div>

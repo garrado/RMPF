@@ -555,12 +555,12 @@
 
   // Bloqueia mover/editar uma atividade de dia inteiro (Plantão, Operação fiscal
   // ou Serviços técnicos — 48 pts) para uma data que já possui outra dessas
-  // atividades manuais. Decreto 49.723/2023 (Anexo VII): não cumulativas entre
-  // si no mesmo dia. Retorna o lançamento conflitante ou null.
+  // atividades manuais que conflite com ela (Plantão × OPF/SRV, ou o mesmo tipo
+  // repetido). OPF + SRV no mesmo dia é permitido. Retorna o conflitante ou null.
   async function bloqueioAtividadeDiaInteiro(idManual, dataISO) {
     const m = _manuais.find(x => x.id === idManual);
     if (!m || !['PLT', 'OPF', 'SRV'].includes(m.tipo_codigo)) return null;
-    const conflitos = await window.atividadesDiaInteiroNoDia(_user.email, dataISO, idManual);
+    const conflitos = await window.atividadesDiaInteiroNoDia(_user.email, dataISO, idManual, m.tipo_codigo);
     return conflitos.length ? conflitos[0] : null;
   }
 
@@ -610,8 +610,9 @@
       if (conflitoDiaEdit) {
         document.getElementById('edit-alert').innerHTML = alerta('danger',
           `🚫 Já existe <strong>${escHtml(conflitoDiaEdit.tipo_nome || conflitoDiaEdit.tipo_codigo)}</strong> em ` +
-          `<strong>${fmtData(data)}</strong>. Plantão fiscal, Operação fiscal e Serviços técnicos (48 pts) ` +
-          `são atividades de dia inteiro e não são cumulativas entre si no mesmo dia — Decreto 49.723/2023 (Anexo VII).`);
+          `<strong>${fmtData(data)}</strong>. O Plantão fiscal não é cumulativo com Operação fiscal nem com ` +
+          `Serviços técnicos, e cada atividade de dia inteiro (48 pts) só pode constar uma vez por dia. ` +
+          `Operação fiscal e Serviços técnicos podem ficar no mesmo dia.`);
         return;
       }
       const validacao = await validarLimitePontosOcorrenciaEdicao(id, data);
@@ -736,8 +737,9 @@
       if (conflitoDiaCorr) {
         document.getElementById('corrigir-alert').innerHTML = alerta('danger',
           `🚫 Já existe <strong>${escHtml(conflitoDiaCorr.tipo_nome || conflitoDiaCorr.tipo_codigo)}</strong> em ` +
-          `<strong>${fmtData(data)}</strong>. Plantão fiscal, Operação fiscal e Serviços técnicos (48 pts) ` +
-          `são atividades de dia inteiro e não são cumulativas entre si no mesmo dia — Decreto 49.723/2023 (Anexo VII).`);
+          `<strong>${fmtData(data)}</strong>. O Plantão fiscal não é cumulativo com Operação fiscal nem com ` +
+          `Serviços técnicos, e cada atividade de dia inteiro (48 pts) só pode constar uma vez por dia. ` +
+          `Operação fiscal e Serviços técnicos podem ficar no mesmo dia.`);
         return;
       }
       const validacao = await validarLimitePontosOcorrenciaEdicao(id, data);
