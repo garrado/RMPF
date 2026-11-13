@@ -88,7 +88,7 @@ Regras **por fiscal**. "Inspeção" = origem `visa_csv`, `sim_csv` ou `insp360`.
 
 **RN-NCU-003** **Relatório técnico de alta × vistoria (item 13)**: o REL de alta mantém os pontos e a vistoria do dia é zerada. *Evidência: idem (`relAltaDatas`).*
 
-**RN-NCU-004** **Atividades de dia inteiro entre si**: PLT, OPF e SRV (48 pts) não convivem no mesmo dia — a segunda é **bloqueada**. Vale só entre lançamentos **manuais**. *Evidência: `js/visa-import.js` (`TIPOS_DIA_INTEIRO_MANUAL`), `lancamento.html`.*
+**RN-NCU-004** **Atividades de dia inteiro entre si**: PLT (48 pts) não convive com OPF nem com SRV no mesmo dia, e nenhuma das três se repete na data — a segunda é **bloqueada** (no lançamento, na edição e na correção de data) e, se já homologadas, **reabertas** na revalidação. **Exceção (v1.43.0): OPF + SRV no mesmo dia é permitido, em qualquer ordem** — o Anexo VII não veda o item 17 com o item 18 (o item 18 só é não cumulativo com vistoria). Vale só entre lançamentos **manuais**. *Evidência: `js/visa-import.js` (`TIPOS_DIA_INTEIRO_MANUAL`, `PARES_DIA_INTEIRO_CUMULATIVOS`, `conflitamDiaInteiro`), `lancamento.html`, `meus-lancamentos.html`.*
 
 **RN-NCU-005** Bloqueios na entrada manual: Plantão em data com inspeção **que pontua**; OPF em data com **qualquer** inspeção. Inspeção zerada não bloqueia plantão. *Evidência: `lancamento.html`, `meus-lancamentos.html`.*
 

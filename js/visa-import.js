@@ -176,12 +176,26 @@ function datasComRelAltaImportada(manuais) {
 
 // ── Regra 48×48 — atividades de dia inteiro (manuais) não cumulativas ────
 // Plantão fiscal (PLT), Operação fiscal (OPF) e Serviços técnicos requisitados
-// pela chefia (SRV) valem 48 pts e representam um DIA INTEIRO de serviço; por
-// isso não são cumulativas ENTRE SI no mesmo dia (Decreto 49.723/2023, Anexo
-// VII). A regra vale apenas para LANÇAMENTOS MANUAIS — atividades importadas
-// (VISA/SIM), inclusive o relatório técnico de alta (REL, 48 pts, só CSV), não
-// entram nesta verificação e não são afetadas por ela.
+// pela chefia (SRV) valem 48 pts e representam um DIA INTEIRO de serviço. O
+// Plantão não convive com OPF nem com SRV, e nenhuma delas se repete no mesmo
+// dia. EXCEÇÃO (v1.43.0): OPF e SRV PODEM ser lançados no mesmo dia, em
+// qualquer ordem — o Anexo VII só veda a OPF com vistoria (item 18) e não traz
+// vedação entre o item 17 (SRV) e o item 18 (OPF). A regra vale apenas para
+// LANÇAMENTOS MANUAIS — atividades importadas (VISA/SIM), inclusive o
+// relatório técnico de alta (REL, 48 pts, só CSV), não entram nesta
+// verificação e não são afetadas por ela.
 const TIPOS_DIA_INTEIRO_MANUAL = ['PLT', 'OPF', 'SRV'];
+
+// Pares de dia inteiro que PODEM coexistir no mesmo dia (ordem indiferente).
+const PARES_DIA_INTEIRO_CUMULATIVOS = [['OPF', 'SRV']];
+
+// true se as duas atividades de dia inteiro (códigos) NÃO podem ficar no mesmo
+// dia. Tipo desconhecido/ausente → conflita (comportamento conservador).
+function conflitamDiaInteiro(tipoA, tipoB) {
+  const a = String(tipoA || ''), b = String(tipoB || '');
+  return !PARES_DIA_INTEIRO_CUMULATIVOS.some(([x, y]) =>
+    (a === x && b === y) || (a === y && b === x));
+}
 
 function ehAtividadeDiaInteiroManual(m) {
   return !!m && TIPOS_DIA_INTEIRO_MANUAL.includes(m.tipo_codigo) &&
@@ -189,9 +203,10 @@ function ehAtividadeDiaInteiroManual(m) {
 }
 
 // Atividades de dia inteiro (48 pts) já lançadas manualmente numa data para o
-// fiscal — usadas para impedir uma segunda no mesmo dia. `excluirId` ignora o
-// próprio registro (ao editar/mover). Retorna a lista dos lançamentos.
-async function atividadesDiaInteiroNoDia(fiscalEmail, dataISO, excluirId = null) {
+// fiscal que CONFLITAM com `tipoCodigo` (a atividade que se quer lançar/mover)
+// — usadas para impedir a combinação no mesmo dia. Sem `tipoCodigo`, devolve
+// todas. `excluirId` ignora o próprio registro (ao editar/mover).
+async function atividadesDiaInteiroNoDia(fiscalEmail, dataISO, excluirId = null, tipoCodigo = null) {
   if (!fiscalEmail || !dataISO) return [];
   const parts = String(dataISO).split('-');
   if (parts.length !== 3) return [];
@@ -200,7 +215,8 @@ async function atividadesDiaInteiroNoDia(fiscalEmail, dataISO, excluirId = null)
   if (!ano || !mes) return [];
   const manuais = await window.db_getManuais(fiscalEmail, mes, ano);
   return manuais.filter(m =>
-    m.id !== excluirId && m.data === dataISO && ehAtividadeDiaInteiroManual(m)
+    m.id !== excluirId && m.data === dataISO && ehAtividadeDiaInteiroManual(m) &&
+    (!tipoCodigo || conflitamDiaInteiro(tipoCodigo, m.tipo_codigo))
   );
 }
 
@@ -921,11 +937,14 @@ async function revalidarCruzadoMes({ mes, ano, fiscalEmail, escrever, anota, onP
         if (dInteiroPontuando.length > 1) {
           for (const m of dInteiroPontuando) {
             if (!_ehHomologado(m)) continue;
-            const outro = dInteiroPontuando.find(x => x.id !== m.id);
+            // OPF + SRV no mesmo dia é permitido: só reabre se houver um par conflitante.
+            const outro = dInteiroPontuando.find(x =>
+              x.id !== m.id && conflitamDiaInteiro(m.tipo_codigo, x.tipo_codigo));
+            if (!outro) continue;
             await reabrir(m, _motivoReaberturaConflito(
               'há outra atividade de dia inteiro (48 pontos) lançada no mesmo dia — ' +
-              ((outro && outro.tipo_nome) || 'plantão/operação/serviços técnicos') +
-              ' —, e elas não são cumulativas entre si (Decreto 49.723/2023, Anexo VII)'), {});
+              (outro.tipo_nome || outro.tipo_codigo || 'plantão/operação/serviços técnicos') +
+              ' —, e elas não são cumulativas entre si (plantão × operação/serviços técnicos, ou a mesma atividade repetida)'), {});
           }
         }
       } catch (e) {
@@ -2490,6 +2509,7 @@ window.ehRelAltaImportada          = ehRelAltaImportada;
 window.datasComRelAltaImportada    = datasComRelAltaImportada;
 window.ehAtividadeDiaInteiroManual = ehAtividadeDiaInteiroManual;
 window.atividadesDiaInteiroNoDia   = atividadesDiaInteiroNoDia;
+window.conflitamDiaInteiro        = conflitamDiaInteiro;
 window.motivoNaoCumulatividadeVistoria = motivoNaoCumulatividadeVistoria;
 window.visaCanonicoOrigem          = visaCanonicoOrigem;
 window.visaDiffOrigem              = visaDiffOrigem;
