@@ -44,6 +44,24 @@
 
         <li class="changelog-item">
           <div class="changelog-version">
+            <span class="badge-version">v1.46.0</span>
+            <span class="badge-date">28/11/2026 às 06:47</span>
+          </div>
+          <div class="changelog-title">Autoriza&ccedil;&atilde;o do 3&ordm; fiscal definitiva, totais padronizados e 360 decidido por inspe&ccedil;&atilde;o</div>
+          <ul class="changelog-changes">
+            <li><strong>Autoriza&ccedil;&atilde;o n&atilde;o se perde mais</strong> &mdash; &ldquo;🔔 Autorizar&rdquo; (ou homologar documento com pendentes) grava <code>terceiro_autorizado</code> (+ data e autor) em cada lan&ccedil;amento. A importa&ccedil;&atilde;o do CSV e a regrava&ccedil;&atilde;o do 360 respeitam a marca: antes, a cada rodada o lan&ccedil;amento voltava a <em>pendente</em> e era preciso autorizar de novo. Homologado e depois reaberto conta como autorizado. Autoriza&ccedil;&otilde;es perdidas antes desta vers&atilde;o precisam ser feitas uma &uacute;ltima vez.</li>
+            <li><strong>Totais iguais em todas as telas</strong> &mdash; conta &uacute;nica (<code>resumoPontosAguardando</code>, <code>js/calculo.js</code>): <em>Pts Enviados</em> = aguardando homologa&ccedil;&atilde;o; <em>Aguardando Autoriza&ccedil;&atilde;o</em> = 3&ordm; fiscal em diante, nunca somados. Cart&atilde;o azul-claro no Dashboard do fiscal, na Confer&ecirc;ncia e em Meus Lan&ccedil;amentos (que ganhou cart&otilde;es de totais); coluna &ldquo;Pts Aut.&rdquo; e linha &ldquo;🔔 Autoriza&ccedil;&atilde;o pendente&rdquo; no Dashboard do administrador; o rodap&eacute; do calend&aacute;rio do fiscal informa quanto aguarda autoriza&ccedil;&atilde;o.</li>
+            <li><strong>Celular do administrador</strong> &mdash; na Vis&atilde;o Geral, quem tem autoriza&ccedil;&atilde;o pendente aparece com a ampulheta em c&iacute;rculo vermelho (prioridade sobre o &#9888;&#65039; de recusado), com legenda.</li>
+            <li><strong>Lan&ccedil;amento 360 decidido por inspe&ccedil;&atilde;o</strong> &mdash; a Confer&ecirc;ncia agrupa os lan&ccedil;amentos pelo n&uacute;mero 360, como o CVS faz pelo CONTROLE: autorizar, aceitar, recusar ou devolver vale para a inspe&ccedil;&atilde;o inteira.</li>
+            <li><strong>360 decidido fica s&oacute; leitura</strong> &mdash; como o lan&ccedil;amento manual: depois de homologada, recusada ou fechada, a inspe&ccedil;&atilde;o n&atilde;o pode mais ser editada (antes, regravar podia criar lan&ccedil;amentos novos num documento j&aacute; homologado). Para corrigir, o gestor devolve &agrave; fila (&ldquo;↩ Pendente&rdquo;).</li>
+            <li><strong>Data do CVS com ano 2001</strong> &mdash; o exportador em regi&atilde;o inglesa grava <code>Sat 11/28/  1:34</code>, sem ano, e o RMPF (que l&ecirc; o arquivo cru) mostrava &ldquo;28/11/2001&rdquo;. O formato passa a ser reconhecido (sem ano = ano corrente).</li>
+            <li><strong>Regras do Firestore</strong> &mdash; o fiscal s&oacute; grava o pr&oacute;prio lan&ccedil;amento manual, sem decis&atilde;o do gestor; &ldquo;Corrigir e Reenviar&rdquo; do recusado passa a ter permiss&atilde;o; anexo trav&aacute;vel ap&oacute;s a decis&atilde;o; importados do CVS/SIM somente leitura para o fiscal (VISA <code>firestore.rules</code>, publicado no Console). Regras na RN: RN-CNF-008, RN-APU-005, RN-ACE-005, RN-360-004.</li>
+            <li><strong>Arquivos</strong> &mdash; <code>conferencia.html</code>, <code>dashboard.html</code>, <code>meus-lancamentos.html</code>, <code>lancamento-360.html</code>, <code>js/visa-import.js</code>, <code>js/insp360.js</code>, <code>js/calculo.js</code>, <code>js/firestore.js</code>, <code>css/rmpf.css</code>, testes; <code>js/version.js</code> &mdash; 1.46.0; <code>service-worker.js</code> &mdash; <code>rmpf-v1.46.0</code>; <code>changelog.html</code> &mdash; esta entrada.</li>
+          </ul>
+        </li>
+
+        <li class="changelog-item">
+          <div class="changelog-version">
             <span class="badge-version">v1.45.3</span>
             <span class="badge-date">21/11/2026</span>
           </div>
